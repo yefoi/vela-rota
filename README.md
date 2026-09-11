@@ -61,12 +61,28 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
    `OPENAI_FALLBACK_MODEL`.
 3. Deploy. La UI queda estática y los endpoints `/api/*` corren como funciones.
 
+## Ritual
+
+- **Fuentes reales**: Binance global → Binance US → Coinbase → cera sintética,
+  según lo que responda desde el servidor.
+- **Tiradas**: `tiempo` (pasado/presente/futuro) o `cruz` (5 cartas). El fiel
+  puede formular una pregunta que entra en la lectura.
+- **Lectura en streaming**: el oráculo escribe token a token vía SSE.
+- **En vivo**: refresco periódico del altar (pausable).
+- **Volatilidad**: el ruido, el glitch y la cera reaccionan al rango real;
+  un desplome dispara el derrame.
+- **Permalink y pergamino**: el estado va en la URL; la lectura se exporta como
+  PNG para descargar o compartir.
+
 ## Endpoints
 
 - `GET  /api/config` — símbolos, intervalos, motor IA, modelo y respaldo.
-- `GET  /api/candles?symbol=BTCUSDT&interval=1h&limit=48`
-- `POST /api/oracle` — velas + sigilos + tirada (pasado/presente/futuro) + mandato.
-- `POST /api/lectura` — lectura completa de una vela (`{ symbol, interval, index }`).
+- `GET  /api/candles?symbol=BTCUSDT&interval=1h&limit=48` — incluye `volatilidad`.
+- `POST /api/oracle` — `{ symbol, interval, modo: 'tiempo'|'cruz', pregunta }` →
+  velas + sigilos + `tirada.cartas` + `mandato` + `volatilidad`.
+- `POST /api/lectura` — lectura completa de una vela (`{ symbol, interval, index, pregunta }`).
+- `GET  /api/lectura-stream?symbol=…&interval=…&index=…&pregunta=…` — SSE con
+  eventos `meta`, `trozo` y `fin`.
 
 ## Aviso
 

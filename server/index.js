@@ -8,7 +8,9 @@ import {
   manejarVelas,
   manejarOracle,
   manejarLectura,
+  prepararLectura,
 } from './handlers.js'
+import { lecturaIAStream } from './oracle.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -45,6 +47,57 @@ app.post('/api/lectura', async (req, res) => {
     res.status(502).json({ error: String(e?.message || e) })
   }
 })
+
+// El oráculo escribe en tiempo real (Server-Sent Events)
+app.get('/api/lectura-stream', async (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  })
+  const enviar = (evento, datos) => res.write(`event: ${evento}\ndata: ${JSON.stringify(datos)}\n\n`)
+
+  try {
+    const { symbol, interval, fuente, indice, vela, procedural } = await prepararLectura({
+      symbol: req.query.symbol,
+      interval: req.query.interval,
+      limit: req.query.limit,
+      index: req.query.index,
+      pregunta: req.query.pregunta,
+    })
+    if (!procedural) {
+      enviar('fin', { error: 'vela no encontrada' })
+      return res.end()
+    }
+    enviar('meta', metaDe(procedural, { symbol, interval, fuente, indice }))
+    const info = await lecturaIAStream(symbol, interval, vela, procedural, {
+      onChunk: (texto) => enviar('trozo', { texto }),
+    })
+    enviar('fin', info)
+  } catch (e) {
+    enviar('fin', { motor: 'oraculo-local', error: String(e?.message || e) })
+  }
+  res.end()
+})
+
+function metaDe(procedural, extra) {
+  return {
+    ...extra,
+    carta: procedural.carta,
+    orientacion: procedural.orientacion,
+    posicionTitulo: procedural.posicionTitulo,
+    pregunta: procedural.pregunta,
+    cambio: procedural.cambio,
+    cambioTxt: procedural.cambioTxt,
+    apertura: procedural.apertura,
+    cierre: procedural.cierre,
+    maximo: procedural.maximo,
+    minimo: procedural.minimo,
+    volumen: procedural.volumen,
+    openTime: procedural.openTime,
+  }
+}
 
 const dist = path.resolve(__dirname, '..', 'dist')
 if (fs.existsSync(dist)) {

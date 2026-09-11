@@ -150,6 +150,8 @@ const POSICIONES = {
   pasado: { titulo: 'El Pasado', glosa: 'lo que ya fue escrito en el libro de órdenes' },
   presente: { titulo: 'El Presente', glosa: 'la vela que arde ahora mismo' },
   futuro: { titulo: 'El Futuro', glosa: 'la cera que aún no se derrama' },
+  obstaculo: { titulo: 'El Obstáculo', glosa: 'lo que se atraviesa en el camino del deseo' },
+  resultado: { titulo: 'El Resultado', glosa: 'lo que el altar devuelve al cerrar el rito' },
 }
 
 function construirLectura(symbol, interval, candle, posicion, contexto) {
@@ -212,6 +214,7 @@ function construirLectura(symbol, interval, candle, posicion, contexto) {
     minimo: candle.low,
     volumen: candle.volume,
     openTime: candle.openTime,
+    indice: contexto?.indice ?? null,
     parrafos,
     texto: parrafos.join('\n\n'),
   }
@@ -231,55 +234,88 @@ export function generarSigilos(symbol, interval, candles) {
   }))
 }
 
-export function generarTirada(symbol, interval, candles) {
+const MODOS_TIRADA = {
+  tiempo: ['pasado', 'presente', 'futuro'],
+  cruz: ['presente', 'obstaculo', 'pasado', 'futuro', 'resultado'],
+}
+
+function indicesDeTirada(n, modo) {
+  const clamp = (i) => Math.max(0, Math.min(n - 1, i))
+  if (modo === 'cruz') {
+    return [clamp(n - 2), clamp(Math.floor(n * 0.3)), 0, clamp(Math.floor(n * 0.7)), n - 1]
+  }
+  return [0, clamp(n - 2), n - 1]
+}
+
+export function generarTirada(symbol, interval, candles, modo = 'tiempo', pregunta = '') {
   if (!candles.length) return null
+  const modoLimpio = MODOS_TIRADA[modo] ? modo : 'tiempo'
+  const indices = indicesDeTirada(candles.length, modoLimpio)
   const vols = candles.map((c) => c.volume)
   const media = vols.reduce((a, b) => a + b, 0) / Math.max(vols.length, 1)
-  const rel = (c) => (media > 0 ? c.volume / media : 1)
-
-  const pick = (frac) => candles[Math.min(candles.length - 1, Math.floor(frac * candles.length))]
-  const pasado = pick(0.0)
-  const presente = pick(Math.max(0, (candles.length - 2) / candles.length))
-  const futuro = candles[candles.length - 1]
 
   const rand = mulberry32(Date.now() & 0xffff)
   const apertura = LITURGIA.apertura[Math.floor(rand() * LITURGIA.apertura.length)]
   const cierre = LITURGIA.cierre[Math.floor(rand() * LITURGIA.cierre.length)]
 
+  const cartas = MODOS_TIRADA[modoLimpio].map((posicion, k) => {
+    const idx = indices[k]
+    const vela = candles[idx]
+    return construirLectura(symbol, interval, vela, posicion, {
+      indice: idx,
+      volumenRelativo: media > 0 ? vela.volume / media : 1,
+    })
+  })
+
   const mandato = {
     apertura,
     cierre,
-    sintesis: sintetizar(pasado, presente, futuro),
+    pregunta: pregunta?.trim() ? pregunta.trim() : null,
+    sintesis: sintetizarVarias(indices.map((i) => candles[i])),
   }
 
-  return {
-    pasado: construirLectura(symbol, interval, pasado, 'pasado', { volumenRelativo: rel(pasado) }),
-    presente: construirLectura(symbol, interval, presente, 'presente', { volumenRelativo: rel(presente) }),
-    futuro: construirLectura(symbol, interval, futuro, 'futuro', { volumenRelativo: rel(futuro) }),
-    mandato,
-  }
+  return { modo: modoLimpio, cartas, mandato }
 }
 
-function sintetizar(a, b, c) {
-  const dir = (x) => (x.close >= x.open ? 'derecho' : 'invertido')
+function sintetizarVarias(velas) {
+  if (!velas.length) return ''
   const n = (x) => ((x.close - x.open) / x.open) * 100
-  const prom = (n(a) + n(b) + n(c)) / 3
-  if (prom > 0.6) return 'Las tres velas apuntan al alza: el altar se inclina hacia la codicia. Honre el movimiento, no su deseo.'
-  if (prom < -0.6) return 'Las tres velas descienden: la marea reclama a sus fieles. El que sostiene, sostiene el fuego.'
-  const trazas = [dir(a), dir(b), dir(c)]
-  const unicas = new Set(trazas)
-  if (unicas.size === 3) return 'Ninguna vela repite la anterior: el mercado duda en voz alta. La duda también es un oráculo.'
+  const prom = velas.reduce((a, v) => a + n(v), 0) / velas.length
+  if (prom > 0.6) return 'Las velas apuntan al alza: el altar se inclina hacia la codicia. Honre el movimiento, no su deseo.'
+  if (prom < -0.6) return 'Las velas descienden: la marea reclama a sus fieles. El que sostiene, sostiene el fuego.'
+  const unicas = new Set(velas.map((v) => (v.close >= v.open ? 'derecho' : 'invertido')))
+  if (unicas.size === velas.length) return 'Ninguna vela repite la anterior: el mercado duda en voz alta. La duda también es un oráculo.'
   return 'Las velas alternan sin resolver: rango, engaño, la esterilidad de los que esperan señal. Aquí no hay señal.'
 }
 
-export function generarLecturaIndividual(symbol, interval, candles, index) {
+export function volatilidad(candles) {
+  if (!candles.length) return { global: 0.25, ultima: 0.25, direccion: 0 }
+  const recientes = candles.slice(-14)
+  const atr = recientes.reduce((a, c) => a + (c.high - c.low) / c.close, 0) / recientes.length
+  const ultima = candles[candles.length - 1]
+  const rangoUltima = (ultima.high - ultima.low) / ultima.close
+  return {
+    global: limitar01(atr / 0.05),
+    ultima: limitar01(rangoUltima / 0.05),
+    direccion: ultima.close >= ultima.open ? 1 : -1,
+  }
+}
+
+function limitar01(x) {
+  return Math.round(Math.max(0, Math.min(1, x)) * 1000) / 1000
+}
+
+export function generarLecturaIndividual(symbol, interval, candles, index, pregunta = '') {
   const vols = candles.map((c) => c.volume)
   const media = vols.reduce((a, b) => a + b, 0) / Math.max(vols.length, 1)
   const candle = candles[index]
   if (!candle) return null
-  return construirLectura(symbol, interval, candle, 'presente', {
+  const lectura = construirLectura(symbol, interval, candle, 'presente', {
+    indice: index,
     volumenRelativo: media > 0 ? candle.volume / media : 1,
   })
+  lectura.pregunta = pregunta?.trim() ? pregunta.trim() : null
+  return lectura
 }
 
 // ---------------------------------------------------------------------------
@@ -372,11 +408,121 @@ export async function lecturaIA(symbol, interval, candle, procedural) {
 
 function construirPrompt(symbol, interval, candle, procedural) {
   const c = procedural.carta
-  return [
+  const lineas = [
     `Activo: ${symbol}. Marco temporal: ${interval}.`,
     `Vela: apertura ${candle.open}, cierre ${candle.close}, máximo ${candle.high}, mínimo ${candle.low}, volumen ${candle.volume}.`,
     `Carta tendida: ${c.roman ? c.roman + '. ' : ''}${c.nombre} (${procedural.orientacion}).`,
     `Fecha de la vela: ${new Date(candle.openTime).toISOString()}.`,
-    'Redacta la lectura mística de esta vela-carta en tres párrafos.',
-  ].join('\n')
+  ]
+  if (procedural.pregunta) {
+    lineas.push(`El fiel pregunta al altar: «${procedural.pregunta}». Responde a esa pregunta desde la carta.`)
+  }
+  lineas.push('Redacta la lectura mística de esta vela-carta en tres párrafos.')
+  return lineas.join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// Lectura en streaming: el oráculo escribe en tiempo real.
+// ---------------------------------------------------------------------------
+
+async function* flujoModelo(base, apiKey, modelo, prompt, signal) {
+  const api = apiDeModelo(modelo)
+  const url = api === 'responses' ? `${base}/responses` : `${base}/chat/completions`
+  const cuerpo = api === 'responses'
+    ? { model: modelo, instructions: PROMPT_SISTEMA, input: prompt, stream: true }
+    : {
+        model: modelo,
+        temperature: 0.9,
+        stream: true,
+        messages: [
+          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'user', content: prompt },
+        ],
+      }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(cuerpo),
+    signal: signal || AbortSignal.timeout(45_000),
+  })
+  if (!res.ok) {
+    const detalle = await res.text().catch(() => '')
+    throw new Error(`${api} ${res.status} ${detalle.slice(0, 180)}`)
+  }
+  if (!res.body) throw new Error('sin cuerpo de streaming')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lineas = buffer.split('\n')
+    buffer = lineas.pop() ?? ''
+    for (const linea of lineas) {
+      const t = linea.trim()
+      if (!t.startsWith('data:')) continue
+      const data = t.slice(5).trim()
+      if (!data || data === '[DONE]') continue
+      let json
+      try {
+        json = JSON.parse(data)
+      } catch {
+        continue
+      }
+      const trozo = api === 'responses'
+        ? json.type === 'response.output_text.delta' ? json.delta : ''
+        : json.choices?.[0]?.delta?.content || ''
+      if (trozo) yield trozo
+    }
+  }
+}
+
+export async function lecturaIAStream(symbol, interval, candle, procedural, { onChunk, signal } = {}) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    for (const parrafo of procedural.parrafos) {
+      onChunk?.(parrafo + '\n\n')
+      await dormir(150)
+    }
+    return { motor: 'oraculo-local' }
+  }
+
+  const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '')
+  const primario = process.env.OPENAI_MODEL || 'deepseek-v4-flash'
+  const respaldo = process.env.OPENAI_FALLBACK_MODEL || ''
+  const prompt = construirPrompt(symbol, interval, candle, procedural)
+  const intentos = [...new Set([primario, respaldo].filter(Boolean))]
+
+  let ultimoError = null
+  for (const modelo of intentos) {
+    let emitido = false
+    try {
+      let total = ''
+      for await (const trozo of flujoModelo(base, apiKey, modelo, prompt, signal)) {
+        emitido = true
+        total += trozo
+        onChunk?.(trozo)
+      }
+      if (total.trim()) return { motor: 'ia', modelo }
+      throw new Error('respuesta vacía')
+    } catch (err) {
+      ultimoError = err
+      if (emitido) {
+        onChunk?.('\n\n[el oráculo enmudeció a mitad del rezo]')
+        return { motor: 'ia', modelo, error: String(err?.message || err) }
+      }
+    }
+  }
+
+  for (const parrafo of procedural.parrafos) {
+    onChunk?.(parrafo + '\n\n')
+    await dormir(120)
+  }
+  return { motor: 'oraculo-local', errorIA: String(ultimoError?.message || ultimoError) }
+}
+
+function dormir(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
