@@ -9,7 +9,7 @@ import {
   volatilidad,
   lecturaIA,
 } from './oracle.js'
-import { analizarBeats } from './cronica.js'
+import { analizarBeats, listarGeneros } from './cronica.js'
 
 export function validar(symbol, interval, limit) {
   const s = SIMBOLOS.includes(symbol) ? symbol : 'BTCUSDT'
@@ -26,6 +26,7 @@ export function manejarConfig() {
   return {
     simbolos: SIMBOLOS,
     intervalos: INTERVALOS,
+    generos: listarGeneros(),
     motorIA: Boolean(process.env.OPENAI_API_KEY),
     modelo: process.env.OPENAI_MODEL || null,
     respaldo: process.env.OPENAI_FALLBACK_MODEL || null,
@@ -76,11 +77,16 @@ function capitulosDe(valor) {
   return Math.min(Math.max(Number(valor) || 5, 3), 8)
 }
 
+function generoDe(valor) {
+  return listarGeneros().some((g) => g.clave === valor) ? valor : 'epico'
+}
+
 export async function manejarCronica(cuerpo) {
   const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
   const capitulos = capitulosDe(cuerpo?.capitulos)
+  const genero = generoDe(cuerpo?.genero)
   const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
-  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos)
+  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos, genero)
   return {
     symbol,
     interval,
@@ -90,6 +96,7 @@ export async function manejarCronica(cuerpo) {
     beats,
     trama,
     protagonista,
+    genero,
     volatilidad: volatilidad(velas),
   }
 }
@@ -97,8 +104,12 @@ export async function manejarCronica(cuerpo) {
 export async function prepararCronica(cuerpo) {
   const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
   const capitulos = capitulosDe(cuerpo?.capitulos)
+  const genero = generoDe(cuerpo?.genero)
   const premisa = normalizarPregunta(cuerpo?.premisa)
+  const desde = Math.max(Number(cuerpo?.desde) || 0, 0)
+  const inicio = Math.max(Number(cuerpo?.inicio) || 0, 0)
+  const resumen = typeof cuerpo?.resumen === 'string' ? cuerpo.resumen.slice(-1000) : ''
   const { fuente, velas } = await obtenerVelas(symbol, interval, limit)
-  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos)
-  return { symbol, interval, fuente, velas, beats, trama, protagonista, premisa }
+  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos, genero)
+  return { symbol, interval, fuente, velas, beats, trama, protagonista, premisa, genero, desde, inicio, resumen }
 }

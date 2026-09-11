@@ -20,6 +20,9 @@ const RESTAURO = {
   vela: params.has('vela') ? Number(params.get('vela')) : null,
   pregunta: params.get('pregunta') || '',
   vista: params.get('vista') === 'cronica' ? 'cronica' : 'oraculo',
+  genero: params.get('genero') || 'epico',
+  premisa: params.get('premisa') || '',
+  capitulos: Number(params.get('capitulos')) || 5,
 }
 
 const ETIQUETA_FUENTE = {
@@ -32,6 +35,9 @@ const ETIQUETA_FUENTE = {
 export default function App() {
   const [config, setConfig] = useState(null)
   const [vista, setVista] = useState(RESTAURO.vista)
+  const [genero, setGenero] = useState(RESTAURO.genero)
+  const [premisa, setPremisa] = useState(RESTAURO.premisa)
+  const [capitulos, setCapitulos] = useState(RESTAURO.capitulos)
   const [simbolo, setSimbolo] = useState(RESTAURO.simbolo)
   const [intervalo, setIntervalo] = useState(RESTAURO.intervalo)
   const [modo, setModo] = useState(RESTAURO.modo)
@@ -128,12 +134,18 @@ export default function App() {
     const p = new URLSearchParams()
     p.set('simbolo', simbolo)
     p.set('i', intervalo)
-    if (vista === 'cronica') p.set('vista', 'cronica')
-    if (modo === 'cruz') p.set('modo', 'cruz')
-    if (pregunta) p.set('pregunta', pregunta)
+    if (vista === 'cronica') {
+      p.set('vista', 'cronica')
+      if (genero !== 'epico') p.set('genero', genero)
+      if (premisa) p.set('premisa', premisa)
+      if (capitulos !== 5) p.set('capitulos', String(capitulos))
+    } else {
+      if (modo === 'cruz') p.set('modo', 'cruz')
+      if (pregunta) p.set('pregunta', pregunta)
+    }
     if (seleccion != null) p.set('vela', String(seleccion))
     window.history.replaceState(null, '', `${window.location.pathname}?${p.toString()}`)
-  }, [simbolo, intervalo, modo, pregunta, seleccion, vista])
+  }, [simbolo, intervalo, modo, pregunta, seleccion, vista, genero, premisa, capitulos])
 
   function cambiarModo(nuevo) {
     if (nuevo === modo) return
@@ -362,7 +374,20 @@ export default function App() {
       </section>
         </>
       ) : (
-        <Cronica simbolo={simbolo} intervalo={intervalo} seleccion={seleccion} onSeleccion={setSeleccion} />
+        <Cronica
+          key={`${simbolo}|${intervalo}|${genero}|${capitulos}`}
+          simbolo={simbolo}
+          intervalo={intervalo}
+          seleccion={seleccion}
+          onSeleccion={setSeleccion}
+          genero={genero}
+          onGenero={setGenero}
+          premisa={premisa}
+          onPremisa={setPremisa}
+          capitulos={capitulos}
+          onCapitulos={setCapitulos}
+          generos={config?.generos || []}
+        />
       )}
 
       <VelasDeCera />

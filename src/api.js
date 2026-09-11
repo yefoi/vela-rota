@@ -92,12 +92,12 @@ export function streamLectura(
 }
 
 export function streamCronica(
-  { symbol, interval, capitulos = 5, limit = 48, premisa = '' },
+  { symbol, interval, capitulos = 5, limit = 48, premisa = '', genero = 'epico', desde = 0, inicio = 0, resumen = '' },
   { onMeta, onCapitulo, onTrozo, onFin, signal } = {},
 ) {
   return leerEventos(
     '/cronica-stream',
-    { symbol, interval, capitulos, limit, premisa },
+    { symbol, interval, capitulos, limit, premisa, genero, desde, inicio, resumen },
     { meta: onMeta, capitulo: onCapitulo, trozo: onTrozo, fin: onFin },
     signal,
   )

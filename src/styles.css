@@ -1057,6 +1057,108 @@ body {
   letter-spacing: 0.04em;
 }
 
+.cronica-controles {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cronica-controles .control { flex: 1; }
+.cronica-controles select { width: 100%; }
+
+.cronica-botones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.cronica-pista {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.cronica-pista.hay-nuevos { color: #7fb27f; }
+
+.timeline {
+  display: flex;
+  gap: 4px;
+  margin: 14px 0 4px;
+}
+
+.nodo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: 0;
+  border-top: 2px solid var(--mood, var(--oro-tenue));
+  padding: 6px 2px 4px;
+  cursor: pointer;
+  color: var(--tinta-suave);
+  min-width: 0;
+  transition: background 0.2s;
+}
+
+.nodo:hover { background: rgba(217, 180, 91, 0.06); }
+
+.nodo-glifo { font-size: 0.95rem; color: var(--mood, var(--oro)); }
+
+.nodo-funcion {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.nodo-cambio { font-family: var(--mono); font-size: 0.5rem; }
+
+.nodo-activo {
+  background: rgba(217, 180, 91, 0.12);
+  border-top-color: var(--oro);
+  color: var(--cera);
+}
+
+.nodo-habla { background: rgba(217, 180, 91, 0.2); }
+
+.estado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--oro-tenue);
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--tinta-suave);
+}
+
+.estado i {
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--oro);
+  margin-right: 4px;
+}
+
+.cronica-acto.esta-hablando {
+  box-shadow: inset 3px 0 0 var(--oro);
+  background: rgba(217, 180, 91, 0.04);
+}
+
 .pregunta button:disabled { opacity: 0.5; cursor: default; }
 
 .actos {

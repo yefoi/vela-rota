@@ -13,17 +13,26 @@ export default async function handler(req, res) {
   const enviar = (evento, datos) => res.write(`event: ${evento}\ndata: ${JSON.stringify(datos)}\n\n`)
 
   try {
-    const { symbol, interval, fuente, beats, trama, protagonista, premisa } = await prepararCronica({
-      symbol: req.query.symbol,
-      interval: req.query.interval,
-      limit: req.query.limit,
-      capitulos: req.query.capitulos,
-      premisa: req.query.premisa,
-    })
-    enviar('meta', { symbol, interval, fuente, beats, trama, protagonista, premisa })
+    const { symbol, interval, fuente, beats, trama, protagonista, premisa, genero, desde, inicio, resumen } =
+      await prepararCronica({
+        symbol: req.query.symbol,
+        interval: req.query.interval,
+        limit: req.query.limit,
+        capitulos: req.query.capitulos,
+        premisa: req.query.premisa,
+        genero: req.query.genero,
+        desde: req.query.desde,
+        inicio: req.query.inicio,
+        resumen: req.query.resumen,
+      })
+    enviar('meta', { symbol, interval, fuente, beats, trama, protagonista, premisa, genero, desde, inicio })
     const info = await cronicaIAStream(beats, {
       symbol,
+      genero,
       premisa,
+      resumen,
+      desde,
+      inicio,
       onCapitulo: (capitulo) => enviar('capitulo', capitulo),
       onTrozo: (trozo) => enviar('trozo', trozo),
     })
