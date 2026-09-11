@@ -1,0 +1,57 @@
+// Lógica del oficio, independiente del transporte.
+// La usan tanto el servidor Express (dev) como las funciones de Vercel (prod).
+
+import { SIMBOLOS, INTERVALOS, obtenerVelas } from './binance.js'
+import {
+  generarSigilos,
+  generarTirada,
+  generarLecturaIndividual,
+  lecturaIA,
+} from './oracle.js'
+
+export function validar(symbol, interval, limit) {
+  const s = SIMBOLOS.includes(symbol) ? symbol : 'BTCUSDT'
+  const i = INTERVALOS.includes(interval) ? interval : '1h'
+  const l = Math.min(Math.max(Number(limit) || 48, 12), 120)
+  return { symbol: s, interval: i, limit: l }
+}
+
+export function manejarConfig() {
+  return {
+    simbolos: SIMBOLOS,
+    intervalos: INTERVALOS,
+    motorIA: Boolean(process.env.OPENAI_API_KEY),
+    modelo: process.env.OPENAI_MODEL || null,
+    respaldo: process.env.OPENAI_FALLBACK_MODEL || null,
+  }
+}
+
+export async function manejarVelas(query) {
+  const { symbol, interval, limit } = validar(query?.symbol, query?.interval, query?.limit)
+  const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
+  return { symbol, interval, fuente, velas, aviso: error || null }
+}
+
+export async function manejarOracle(cuerpo) {
+  const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
+  const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
+  return {
+    symbol,
+    interval,
+    fuente,
+    aviso: error || null,
+    velas,
+    sigilos: generarSigilos(symbol, interval, velas),
+    tirada: generarTirada(symbol, interval, velas),
+  }
+}
+
+export async function manejarLectura(cuerpo) {
+  const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
+  const { fuente, velas } = await obtenerVelas(symbol, interval, limit)
+  const index = Math.min(Math.max(Number(cuerpo?.index) || velas.length - 1, 0), velas.length - 1)
+  const procedural = generarLecturaIndividual(symbol, interval, velas, index)
+  if (!procedural) return { status: 404, error: 'vela no encontrada' }
+  const lectura = await lecturaIA(symbol, interval, velas[index], procedural)
+  return { symbol, interval, fuente, indice: index, lectura }
+}

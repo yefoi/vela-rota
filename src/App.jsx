@@ -158,7 +158,7 @@ export default function App() {
           <>
             <div className="lectura-carta">
               <TarotCard carta={lectura.carta} active compact />
-              <span className="motor">motor: {motor(lectura.motor)}</span>
+              <span className="motor">motor: {motor(lectura.motor, lectura.modelo)}</span>
             </div>
             <div className="lectura-texto">
               <h2 className="seccion-titulo">
@@ -230,6 +230,7 @@ function num(n) {
   return n.toFixed(5)
 }
 
-function motor(m) {
-  return m === 'ia' ? 'inteligencia oracular' : 'oráculo local'
+function motor(m, modelo) {
+  if (m === 'ia') return modelo ? `inteligencia oracular · ${modelo}` : 'inteligencia oracular'
+  return 'oráculo local'
 }

@@ -284,42 +284,90 @@ export function generarLecturaIndividual(symbol, interval, candles, index) {
 
 // ---------------------------------------------------------------------------
 // Lectura por IA (opcional). Si no hay llave, el oráculo local oficia.
+// Soporta Chat Completions y Responses API, con modelo de respaldo.
 // ---------------------------------------------------------------------------
+
+const PROMPT_SISTEMA =
+  'Eres el oráculo de Vela Rota. Interpretas velas de mercado como cartas de tarot. ' +
+  'Escribes en español, con tono litúrgico y solemne. Jamás rompes el personaje, jamás bromeas, ' +
+  'jamás mencionas que es una sátira. Hablas del precio como destino y de la métrica como presagio. ' +
+  'Devuelve exactamente tres párrafos separados por una línea en blanco, sin títulos ni listas.'
+
+// Los modelos GPT/Grok/Muse de OpenCode Zen hablan por /responses;
+// DeepSeek, GLM, Kimi, Qwen y compañía por /chat/completions.
+function apiDeModelo(modelo) {
+  const forzado = String(process.env.OPENAI_API ?? '').toLowerCase()
+  if (forzado === 'chat' || forzado === 'responses') return forzado
+  return /^(gpt-|gpt\d|o\d|grok|muse)/i.test(modelo) ? 'responses' : 'chat'
+}
+
+function extraerTexto(data) {
+  if (typeof data?.output_text === 'string' && data.output_text.trim()) {
+    return data.output_text.trim()
+  }
+  const partes = []
+  for (const item of data?.output ?? []) {
+    for (const contenido of item?.content ?? []) {
+      if (typeof contenido?.text === 'string') partes.push(contenido.text)
+    }
+  }
+  if (partes.length) return partes.join('\n').trim()
+  return data?.choices?.[0]?.message?.content?.trim() || ''
+}
+
+async function invocarModelo(base, apiKey, modelo, prompt) {
+  const api = apiDeModelo(modelo)
+  const url = api === 'responses' ? `${base}/responses` : `${base}/chat/completions`
+  const cuerpo = api === 'responses'
+    ? { model: modelo, instructions: PROMPT_SISTEMA, input: prompt }
+    : {
+        model: modelo,
+        temperature: 0.9,
+        messages: [
+          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'user', content: prompt },
+        ],
+      }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(cuerpo),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    const detalle = await res.text().catch(() => '')
+    throw new Error(`${api} ${res.status} ${detalle.slice(0, 180)}`)
+  }
+  const texto = extraerTexto(await res.json())
+  if (!texto) throw new Error('respuesta vacía')
+  return texto
+}
 
 export async function lecturaIA(symbol, interval, candle, procedural) {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return { ...procedural, motor: 'oraculo-local' }
-  const base = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+  const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '')
+  const primario = process.env.OPENAI_MODEL || 'deepseek-v4-flash'
+  const respaldo = process.env.OPENAI_FALLBACK_MODEL || ''
   const prompt = construirPrompt(symbol, interval, candle, procedural)
-  try {
-    const res = await fetch(`${base}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        temperature: 0.9,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Eres el oráculo de Vela Rota. Interpretas velas de mercado como cartas de tarot. ' +
-              'Escribes en español, con tono litúrgico y solemne. Jamás rompes el personaje, jamás bromeas, ' +
-              'jamás mencionas que es una sátira. Hablas del precio como destino y de la métrica como presagio. ' +
-              'Devuelve exactamente tres párrafos separados por una línea en blanco, sin títulos ni listas.',
-          },
-          { role: 'user', content: prompt },
-        ],
-      }),
-    })
-    if (!res.ok) throw new Error(`LLM ${res.status}`)
-    const data = await res.json()
-    const texto = data?.choices?.[0]?.message?.content?.trim()
-    if (!texto) throw new Error('respuesta vacía')
-    return { ...procedural, parrafos: texto.split(/\n\s*\n/), texto, motor: 'ia' }
-  } catch {
-    return { ...procedural, motor: 'oraculo-local' }
+  const intentos = [...new Set([primario, respaldo].filter(Boolean))]
+
+  let ultimoError = null
+  for (const modelo of intentos) {
+    try {
+      const texto = await invocarModelo(base, apiKey, modelo, prompt)
+      return {
+        ...procedural,
+        parrafos: texto.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+        texto,
+        motor: 'ia',
+        modelo,
+      }
+    } catch (err) {
+      ultimoError = err
+    }
   }
+  return { ...procedural, motor: 'oraculo-local', errorIA: String(ultimoError?.message || ultimoError) }
 }
 
 function construirPrompt(symbol, interval, candle, procedural) {

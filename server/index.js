@@ -3,8 +3,12 @@ import express from 'express'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SIMBOLOS, INTERVALOS, obtenerVelas } from './binance.js'
-import { generarSigilos, generarTirada, generarLecturaIndividual, lecturaIA } from './oracle.js'
+import {
+  manejarConfig,
+  manejarVelas,
+  manejarOracle,
+  manejarLectura,
+} from './handlers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -13,51 +17,33 @@ const PUERTO = process.env.PORT || 8787
 app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
-function validar(symbol, interval, limit) {
-  const s = SIMBOLOS.includes(symbol) ? symbol : 'BTCUSDT'
-  const i = INTERVALOS.includes(interval) ? interval : '1h'
-  const l = Math.min(Math.max(Number(limit) || 48, 12), 120)
-  return { symbol: s, interval: i, limit: l }
-}
-
 app.get('/api/config', (_req, res) => {
-  res.json({
-    simbolos: SIMBOLOS,
-    intervalos: INTERVALOS,
-    motorIA: Boolean(process.env.OPENAI_API_KEY),
-  })
+  res.json(manejarConfig())
 })
 
 app.get('/api/candles', async (req, res) => {
-  const { symbol, interval, limit } = validar(req.query.symbol, req.query.interval, req.query.limit)
-  const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
-  res.json({ symbol, interval, fuente, velas, aviso: error || null })
+  try {
+    res.json(await manejarVelas(req.query))
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message || e) })
+  }
 })
 
 app.post('/api/oracle', async (req, res) => {
-  const { symbol, interval, limit } = validar(req.body?.symbol, req.body?.interval, req.body?.limit)
-  const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
-  const sigilos = generarSigilos(symbol, interval, velas)
-  const tirada = generarTirada(symbol, interval, velas)
-  res.json({
-    symbol,
-    interval,
-    fuente,
-    aviso: error || null,
-    velas,
-    sigilos,
-    tirada,
-  })
+  try {
+    res.json(await manejarOracle(req.body || {}))
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message || e) })
+  }
 })
 
 app.post('/api/lectura', async (req, res) => {
-  const { symbol, interval, limit } = validar(req.body?.symbol, req.body?.interval, req.body?.limit)
-  const { fuente, velas } = await obtenerVelas(symbol, interval, limit)
-  const index = Math.min(Math.max(Number(req.body?.index) || velas.length - 1, 0), velas.length - 1)
-  const procedural = generarLecturaIndividual(symbol, interval, velas, index)
-  if (!procedural) return res.status(404).json({ error: 'vela no encontrada' })
-  const lectura = await lecturaIA(symbol, interval, velas[index], procedural)
-  res.json({ symbol, interval, fuente, indice: index, lectura })
+  try {
+    const datos = await manejarLectura(req.body || {})
+    res.status(datos.status || 200).json(datos)
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message || e) })
+  }
 })
 
 const dist = path.resolve(__dirname, '..', 'dist')
