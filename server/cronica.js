@@ -432,7 +432,7 @@ function capituloProcedural(beat, k, premisa, capitulos) {
 function limpiar(texto) {
   return String(texto || '')
     .replace(/\r/g, '')
-    .replace(/^\s*(aqu[ií] tienes[^\n]*|claro[^\n]*|acto\s+[ivxlc]+[^\n]*)\s*/i, '')
+    .replace(/^\s*(?:aqu[ií]\s+tienes[^.:\n]*[:.-]?\s*|claro[,:]\s*|acto\s+[ivxlc]+\s*[:.-]\s*)/i, '')
     .replace(/[*_#`>]+/g, '')
     .replace(/\s*\n+\s*/g, ' ')
     .replace(/\s{2,}/g, ' ')

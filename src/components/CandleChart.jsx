@@ -4,7 +4,7 @@ const ORO = '#d9b45b'
 const CERA = '#e7d2a0'
 const SANGRE = '#a32538'
 
-export default function CandleChart({ velas, sigilos, selectedIndex, onSelect }) {
+export default function CandleChart({ velas, sigilos, selectedIndex, onSelect, mostrarSigilos }) {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const [hover, setHover] = useState(null)
@@ -29,8 +29,8 @@ export default function CandleChart({ velas, sigilos, selectedIndex, onSelect })
     canvas.height = size.h * dpr
     const ctx = canvas.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    dibujar(ctx, size.w, size.h, velas, sigilos, selectedIndex, hover)
-  }, [velas, sigilos, selectedIndex, hover, size])
+    dibujar(ctx, size.w, size.h, velas, sigilos, selectedIndex, hover, mostrarSigilos)
+  }, [velas, sigilos, selectedIndex, hover, size, mostrarSigilos])
 
   function indiceDesdeX(clientX) {
     const rect = canvasRef.current.getBoundingClientRect()
@@ -62,7 +62,7 @@ export default function CandleChart({ velas, sigilos, selectedIndex, onSelect })
   )
 }
 
-function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover) {
+function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover, mostrarSigilos) {
   ctx.clearRect(0, 0, w, h)
   const pad = { top: 26, right: 64, bottom: 24, left: 12 }
   const plotW = w - pad.left - pad.right
@@ -148,6 +148,20 @@ function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover) {
       }
     }
   })
+
+  if (mostrarSigilos) {
+    ctx.textAlign = 'center'
+    velas.forEach((v, i) => {
+      if (i === selectedIndex || i === hover) return
+      const sig = sigilos?.[i]?.sigilo
+      if (!sig) return
+      const cx = pad.left + paso * (i + 0.5)
+      ctx.fillStyle = 'rgba(217, 180, 91, 0.5)'
+      ctx.font = '10px "Cinzel", serif'
+      ctx.fillText(sig.roman || glifoPalo(sig.palo), cx, pad.top - 10)
+    })
+    ctx.textAlign = 'left'
+  }
 
   // lectura emergente de la vela señalada
   const idx = hover ?? selectedIndex

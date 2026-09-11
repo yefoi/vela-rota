@@ -151,7 +151,11 @@ const POSICIONES = {
   presente: { titulo: 'El Presente', glosa: 'la vela que arde ahora mismo' },
   futuro: { titulo: 'El Futuro', glosa: 'la cera que aún no se derrama' },
   obstaculo: { titulo: 'El Obstáculo', glosa: 'lo que se atraviesa en el camino del deseo' },
+  entorno: { titulo: 'El Entorno', glosa: 'las fuerzas que rodean sin llegar a tocar' },
+  consejo: { titulo: 'El Consejo', glosa: 'lo que conviene hacer, aunque no apetezca' },
   resultado: { titulo: 'El Resultado', glosa: 'lo que el altar devuelve al cerrar el rito' },
+  respuesta: { titulo: 'La Respuesta', glosa: 'lo que el altar concede o niega' },
+  dia: { titulo: 'La Carta del Día', glosa: 'lo que rige la jornada' },
 }
 
 function construirLectura(symbol, interval, candle, posicion, contexto) {
@@ -237,10 +241,17 @@ export function generarSigilos(symbol, interval, candles) {
 const MODOS_TIRADA = {
   tiempo: ['pasado', 'presente', 'futuro'],
   cruz: ['presente', 'obstaculo', 'pasado', 'futuro', 'resultado'],
+  herradura: ['pasado', 'presente', 'futuro', 'obstaculo', 'entorno', 'consejo', 'resultado'],
+  si_no: ['respuesta'],
+  dia: ['dia'],
 }
 
 function indicesDeTirada(n, modo) {
   const clamp = (i) => Math.max(0, Math.min(n - 1, i))
+  if (modo === 'si_no' || modo === 'dia') return [n - 1]
+  if (modo === 'herradura') {
+    return [0, 0.16, 0.34, 0.5, 0.66, 0.84, 1].map((f) => clamp(Math.round(f * (n - 1))))
+  }
   if (modo === 'cruz') {
     return [clamp(n - 2), clamp(Math.floor(n * 0.3)), 0, clamp(Math.floor(n * 0.7)), n - 1]
   }
@@ -272,6 +283,7 @@ export function generarTirada(symbol, interval, candles, modo = 'tiempo', pregun
     cierre,
     pregunta: pregunta?.trim() ? pregunta.trim() : null,
     sintesis: sintetizarVarias(indices.map((i) => candles[i])),
+    analisis: analizarTirada(cartas, modoLimpio),
   }
 
   return { modo: modoLimpio, cartas, mandato }
@@ -286,6 +298,102 @@ function sintetizarVarias(velas) {
   const unicas = new Set(velas.map((v) => (v.close >= v.open ? 'derecho' : 'invertido')))
   if (unicas.size === velas.length) return 'Ninguna vela repite la anterior: el mercado duda en voz alta. La duda también es un oráculo.'
   return 'Las velas alternan sin resolver: rango, engaño, la esterilidad de los que esperan señal. Aquí no hay señal.'
+}
+
+// Lectura relacional: qué dicen las cartas entre sí.
+function analizarTirada(cartas, modo) {
+  const total = cartas.length
+  const mayores = cartas.filter((c) => c.carta.tipo === 'mayor').length
+  const invertidas = cartas.filter((c) => c.orientacion === 'invertido').length
+  const tendidas = cartas.filter((c) => c.orientacion === 'tendida').length
+  const elementos = { Fuego: 0, Agua: 0, Aire: 0, Tierra: 0 }
+  const palos = { Bastos: 0, Copas: 0, Espadas: 0, Oros: 0 }
+  for (const c of cartas) {
+    elementos[c.carta.elemento] = (elementos[c.carta.elemento] || 0) + 1
+    if (c.carta.tipo === 'menor') palos[c.carta.palo] = (palos[c.carta.palo] || 0) + 1
+  }
+  const domElem = Object.entries(elementos).sort((a, b) => b[1] - a[1])[0][0]
+  const domPalo = Object.entries(palos).sort((a, b) => b[1] - a[1])[0]
+  const frases = []
+
+  if (total === 1) {
+    frases.push(
+      mayores === 1
+        ? 'Una sola carta, y es un Arcano Mayor: aquí habla el destino, no lo cotidiano.'
+        : 'Una sola carta, y pertenece a lo menor: el asunto es terrenal.',
+    )
+  } else if (mayores >= Math.ceil(total / 2)) {
+    frases.push(`El destino pesa: ${mayores} de ${total} cartas son Arcanos Mayores. Esto no se negocia, se acata.`)
+  } else if (mayores === 0) {
+    frases.push('Ningún Arcano Mayor: la tirada habla de lo cotidiano, no del destino.')
+  } else {
+    frases.push(`${mayores} de ${total} cartas son Arcanos Mayores; el resto pertenece a lo menor.`)
+  }
+
+  if (invertidas === 0) {
+    frases.push('Ninguna carta invertida: las fuerzas se muestran francas.')
+  } else if (invertidas >= Math.ceil(total / 2)) {
+    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}: el rito está trabado de arriba abajo.`)
+  } else {
+    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}: fuerzas que trabajan en contra o llegan tarde.`)
+  }
+
+  if (tendidas) {
+    frases.push(`${tendidas} ${tendidas === 1 ? 'carta tendida' : 'cartas tendidas'} en cruz: lo que aún no decide su dirección.`)
+  }
+
+  if (modo !== 'si_no' && modo !== 'dia') {
+    frases.push(`Domina el elemento ${domElem}${domPalo[1] > 0 ? `, y con él la casa de ${domPalo[0]}` : ''}.`)
+  }
+
+  if (modo === 'si_no') {
+    const c = cartas[0]
+    const si = c.orientacion !== 'invertido'
+    frases.push(`${si ? 'La carta responde sí' : 'La carta responde no'}: ${c.carta.nombre}${si ? ', en posición derecha' : ', invertida'}. No hay matices: el altar ya ha hablado.`)
+  }
+
+  return {
+    total,
+    mayores,
+    invertidas,
+    tendidas,
+    elementos,
+    palos,
+    elemento: domElem,
+    palo: domPalo[0],
+    texto: frases.join(' '),
+  }
+}
+
+// Clima del mazo: el temperamento de toda la serie.
+export function climaDelMazo(sigilos) {
+  const total = sigilos.length || 1
+  const elementos = { Fuego: 0, Agua: 0, Aire: 0, Tierra: 0 }
+  const palos = { Bastos: 0, Copas: 0, Espadas: 0, Oros: 0 }
+  let mayores = 0
+  let invertidas = 0
+  let tendidas = 0
+  for (const { sigilo } of sigilos) {
+    if (sigilo.tipo === 'mayor') mayores++
+    else {
+      elementos[sigilo.elemento] = (elementos[sigilo.elemento] || 0) + 1
+      palos[sigilo.palo] = (palos[sigilo.palo] || 0) + 1
+    }
+    if (sigilo.orientacion === 'invertido') invertidas++
+    if (sigilo.orientacion === 'tendida') tendidas++
+  }
+  const domElem = Object.entries(elementos).sort((a, b) => b[1] - a[1])[0]
+  const domPalo = Object.entries(palos).sort((a, b) => b[1] - a[1])[0]
+  const pctInv = invertidas / total
+  const tono = pctInv > 0.55
+    ? 'La marea baja: el mazo se inclina a lo invertido, y quien lee haría bien en temer.'
+    : pctInv < 0.3
+      ? 'La marea sube: las cartas se muestran francas y el altar está de humor.'
+      : 'El mazo está dividido, como casi siempre.'
+  const texto =
+    `Sobre ${total} velas mandan ${domPalo[0]} y el elemento ${domElem[0]}; ` +
+    `${mayores} Arcanos Mayores se asoman y ${invertidas} cartas caen invertidas. ${tono}`
+  return { total, mayores, invertidas, tendidas, elementos, palos, palo: domPalo[0], elemento: domElem[0], texto }
 }
 
 export function volatilidad(candles) {
@@ -328,6 +436,45 @@ const PROMPT_SISTEMA =
   'Escribes en español, con tono litúrgico y solemne. Jamás rompes el personaje, jamás bromeas, ' +
   'jamás mencionas que es una sátira. Hablas del precio como destino y de la métrica como presagio. ' +
   'Devuelve exactamente tres párrafos separados por una línea en blanco, sin títulos ni listas.'
+
+const cacheLecturas = new Map()
+const CACHE_LECT = 10 * 60_000
+
+function claveLectura(symbol, interval, candle, pregunta) {
+  return `${symbol}|${interval}|${candle.openTime}|${pregunta || ''}`
+}
+
+// Quita preámbulos y adornos que el modelo a veces agrega.
+function limpiarProsa(texto) {
+  return String(texto || '')
+    .replace(/\r/g, '')
+    .replace(/^\s*(?:aqu[ií]\s+tienes[^.:\n]*[:.-]?\s*|claro[,:]\s*)/i, '')
+    .replace(/[*_#`>]+/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+// Sanea el inicio del torrente sin romper el streaming.
+function saneadorDeFlujo(emitir) {
+  let buffer = ''
+  let libre = false
+  const fn = (trozo) => {
+    if (libre) return emitir(trozo)
+    buffer += trozo
+    if (buffer.length < 48 && !/[\n.]/.test(buffer)) return
+    buffer = limpiarProsa(buffer)
+    libre = true
+    if (buffer) emitir(buffer)
+  }
+  fn.flush = () => {
+    if (!libre) {
+      buffer = limpiarProsa(buffer)
+      libre = true
+      if (buffer) emitir(buffer)
+    }
+  }
+  return fn
+}
 
 // Los modelos GPT/Grok/Muse de OpenCode Zen hablan por /responses;
 // DeepSeek, GLM, Kimi, Qwen y compañía por /chat/completions.
@@ -382,6 +529,19 @@ async function invocarModelo(base, apiKey, modelo, prompt) {
 export async function lecturaIA(symbol, interval, candle, procedural) {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return { ...procedural, motor: 'oraculo-local' }
+  const clave = claveLectura(symbol, interval, candle, procedural.pregunta)
+  const guardada = cacheLecturas.get(clave)
+  if (guardada && Date.now() - guardada.t < CACHE_LECT) {
+    return {
+      ...procedural,
+      parrafos: guardada.texto.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+      texto: guardada.texto,
+      motor: 'ia',
+      modelo: guardada.modelo,
+      cache: true,
+    }
+  }
+
   const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '')
   const primario = process.env.OPENAI_MODEL || 'deepseek-v4-flash'
   const respaldo = process.env.OPENAI_FALLBACK_MODEL || ''
@@ -391,7 +551,10 @@ export async function lecturaIA(symbol, interval, candle, procedural) {
   let ultimoError = null
   for (const modelo of intentos) {
     try {
-      const texto = await invocarModelo(base, apiKey, modelo, prompt)
+      const texto = limpiarProsa(await invocarModelo(base, apiKey, modelo, prompt))
+      if (!texto) throw new Error('respuesta vacía')
+      cacheLecturas.set(clave, { t: Date.now(), texto, modelo })
+      if (cacheLecturas.size > 60) cacheLecturas.delete(cacheLecturas.keys().next().value)
       return {
         ...procedural,
         parrafos: texto.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
@@ -512,17 +675,30 @@ export async function lecturaIAStream(symbol, interval, candle, procedural, { on
     return volcarProcedural(procedural, onChunk, 150)
   }
 
+  const clave = claveLectura(symbol, interval, candle, procedural.pregunta)
+  const guardada = cacheLecturas.get(clave)
+  if (guardada && Date.now() - guardada.t < CACHE_LECT) {
+    for (const parrafo of guardada.texto.split(/\n\s*\n/)) {
+      onChunk?.(parrafo + '\n\n')
+      await dormir(120)
+    }
+    return { motor: 'ia', modelo: guardada.modelo, cache: true }
+  }
+
   const prompt = construirPrompt(symbol, interval, candle, procedural)
+  const emitir = saneadorDeFlujo((t) => onChunk?.(t))
   let modelo = null
   let emitido = false
-  let total = ''
+  let bruto = ''
   try {
     for await (const trozo of transmitirTexto({ prompt, signal, onModelo: (m) => { modelo = m } })) {
       emitido = true
-      total += trozo
-      onChunk?.(trozo)
+      bruto += trozo
+      emitir(trozo)
     }
+    emitir.flush()
   } catch (err) {
+    emitir.flush()
     if (emitido) {
       onChunk?.('\n\n[el oráculo enmudeció a mitad del rezo]')
       return { motor: 'ia', modelo, error: String(err?.message || err) }
@@ -531,7 +707,12 @@ export async function lecturaIAStream(symbol, interval, candle, procedural, { on
     return { ...info, errorIA: String(err?.message || err) }
   }
 
-  if (total.trim()) return { motor: 'ia', modelo }
+  const limpio = limpiarProsa(bruto)
+  if (limpio) {
+    cacheLecturas.set(clave, { t: Date.now(), texto: limpio, modelo })
+    if (cacheLecturas.size > 60) cacheLecturas.delete(cacheLecturas.keys().next().value)
+    return { motor: 'ia', modelo }
+  }
   return volcarProcedural(procedural, onChunk, 120)
 }
 

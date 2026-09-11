@@ -47,7 +47,7 @@ OPENAI_FALLBACK_MODEL=deepseek-v4-flash        # usa Chat Completions
 ```
 
 - El protocolo se autodetecta por modelo (GPT/Grok/Muse → `/responses`;
-  DeepSeek/GLM/Kimi/Qwen → `/chat/completions`). Forzalo con `OPENAI_API=chat|responses`.
+  DeepSeek/GLM/Kimi/Qwen → `/chat/completions`). Fuérzalo con `OPENAI_API=chat|responses`.
 - Si el modelo primario falla, se reintenta con `OPENAI_FALLBACK_MODEL`.
 - Sin `OPENAI_API_KEY`, oficia el oráculo local sin dependencias externas.
 
@@ -56,8 +56,8 @@ OPENAI_FALLBACK_MODEL=deepseek-v4-flash        # usa Chat Completions
 El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 `server/handlers.js`, y `vercel.json` publica el build de Vite en `dist`.
 
-1. Importá el repo en Vercel (framework: Vite).
-2. Definí las variables: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`,
+1. Importa el repo en Vercel (framework: Vite).
+2. Define las variables: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`,
    `OPENAI_FALLBACK_MODEL`.
 3. Deploy. La UI queda estática y los endpoints `/api/*` corren como funciones.
 
@@ -65,8 +65,12 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 
 - **Fuentes reales**: Binance global → Binance US → Coinbase → cera sintética,
   según lo que responda desde el servidor.
-- **Tiradas**: `tiempo` (pasado/presente/futuro) o `cruz` (5 cartas). El fiel
-  puede formular una pregunta que entra en la lectura.
+- **Tiradas**: `tiempo` (3), `cruz` (5), `herradura` (7), `si_no` (1) y `dia` (1).
+  El fiel puede formular una pregunta que entra en la lectura. Incluye **síntesis
+  relacional** (mayores, invertidas, elemento dominante) y **clima del mazo** de
+  toda la serie.
+- **Sigilos en el gráfico**: muestra el glifo de cada carta sobre cada vela.
+- **Diario**: historial local de tiradas, para repetir una lectura.
 - **Crónica** (modo aparte): el vaivén del precio se vuelve una saga por actos.
   Los actos caen en los **giros reales** (picos, valles, mechas) y llevan función
   narrativa (Planteo, Clímax, Catástrofe, Desenlace). Cada vela es un ánimo
@@ -86,8 +90,8 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 
 - `GET  /api/config` — símbolos, intervalos, motor IA, modelo y respaldo.
 - `GET  /api/candles?symbol=BTCUSDT&interval=1h&limit=48` — incluye `volatilidad`.
-- `POST /api/oracle` — `{ symbol, interval, modo: 'tiempo'|'cruz', pregunta }` →
-  velas + sigilos + `tirada.cartas` + `mandato` + `volatilidad`.
+- `POST /api/oracle` — `{ symbol, interval, modo: 'tiempo'|'cruz'|'herradura'|'si_no'|'dia', pregunta }` →
+  velas + sigilos + `clima` + `tirada.cartas` + `mandato` (con `analisis`) + `volatilidad`.
 - `POST /api/lectura` — lectura completa de una vela (`{ symbol, interval, index, pregunta }`).
 - `GET  /api/lectura-stream?symbol=…&interval=…&index=…&pregunta=…` — SSE con
   eventos `meta`, `trozo` y `fin`.

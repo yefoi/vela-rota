@@ -7,16 +7,46 @@ import TarotCard from './components/TarotCard.jsx'
 import VelasDeCera from './components/VelasDeCera.jsx'
 import {
   generarPergamino,
+  generarPergaminoTirada,
   nombreArchivo,
   descargarPergamino,
   compartirPergamino,
 } from './compartir.js'
 
+const MODOS = ['tiempo', 'cruz', 'herradura', 'si_no', 'dia']
+const ETIQUETA_MODO = {
+  tiempo: 'Tres tiempos',
+  cruz: 'Cruz (5)',
+  herradura: 'Herradura (7)',
+  si_no: 'Sí o no',
+  dia: 'Carta del día',
+}
+
+const GLOSA_MODO = {
+  tiempo: 'tres velas del ciclo, leídas como arcana',
+  cruz: 'cinco velas en cruz, del deseo a su desenlace',
+  herradura: 'siete velas en herradura, de lo que fue a lo que será',
+  si_no: 'una sola vela responde: sí o no',
+  dia: 'una vela rige la jornada',
+}
+
+const CARTAS_POR_MODO = { tiempo: 3, cruz: 5, herradura: 7, si_no: 1, dia: 1 }
+
+function cargarDiario() {
+  try {
+    const crudo = localStorage.getItem('vela-rota:diario')
+    const datos = crudo ? JSON.parse(crudo) : []
+    return Array.isArray(datos) ? datos : []
+  } catch {
+    return []
+  }
+}
+
 const params = new URLSearchParams(window.location.search)
 const RESTAURO = {
   simbolo: params.get('simbolo') || 'BTCUSDT',
   intervalo: params.get('i') || '1h',
-  modo: params.get('modo') === 'cruz' ? 'cruz' : 'tiempo',
+  modo: MODOS.includes(params.get('modo')) ? params.get('modo') : 'tiempo',
   vela: params.has('vela') ? Number(params.get('vela')) : null,
   pregunta: params.get('pregunta') || '',
   vista: params.get('vista') === 'cronica' ? 'cronica' : 'oraculo',
@@ -50,10 +80,17 @@ export default function App() {
   const [escribiendo, setEscribiendo] = useState(false)
   const [error, setError] = useState(null)
   const [enVivo, setEnVivo] = useState(true)
+  const [sigilosOn, setSigilosOn] = useState(false)
+  const [vozOn, setVozOn] = useState(false)
+  const [hablando, setHablando] = useState(false)
+  const [diario, setDiario] = useState(cargarDiario)
   const [aviso, setAviso] = useState(null)
 
   const abortRef = useRef(null)
   const vivoRef = useRef({ simbolo, intervalo, modo, pregunta })
+  const metaRef = useRef(null)
+  const pendienteRef = useRef(RESTAURO.vela)
+  const vozRef = useRef(vozOn)
 
   useEffect(() => {
     obtenerConfig().then(setConfig).catch(() => {})
@@ -62,6 +99,10 @@ export default function App() {
   useEffect(() => {
     vivoRef.current = { simbolo, intervalo, modo, pregunta }
   }, [simbolo, intervalo, modo, pregunta])
+
+  useEffect(() => {
+    vozRef.current = vozOn
+  }, [vozOn])
 
   const consagrar = useCallback((idx) => {
     if (idx == null || idx < 0) return
@@ -72,14 +113,19 @@ export default function App() {
     const ctrl = new AbortController()
     abortRef.current = ctrl
     const suyo = vivoRef.current
+    let textoAcumulado = ''
     streamLectura(
       { symbol: suyo.simbolo, interval: suyo.intervalo, index: idx, pregunta: suyo.pregunta },
       {
         signal: ctrl.signal,
-        onMeta: (meta) => setLectura({ ...meta, texto: '', parrafos: [] }),
+        onMeta: (meta) => {
+          metaRef.current = meta
+          setLectura({ ...meta, texto: '', parrafos: [] })
+        },
         onChunk: (trozo) =>
           setLectura((prev) => {
             const texto = (prev?.texto || '') + trozo
+            textoAcumulado = texto
             return { ...(prev || {}), texto, parrafos: texto.split(/\n\s*\n/) }
           }),
         onFin: (fin) => {
@@ -90,6 +136,19 @@ export default function App() {
             modelo: fin.modelo ?? null,
             errorIA: fin.error,
           }))
+          const meta = metaRef.current
+          if (meta) {
+            recordar({
+              ts: Date.now(),
+              simbolo: suyo.simbolo,
+              intervalo: suyo.intervalo,
+              modo: suyo.modo,
+              indice: idx,
+              carta: meta.carta?.nombre,
+              orientacion: meta.orientacion,
+            })
+          }
+          if (vozRef.current && textoAcumulado) narrarTexto(textoAcumulado, meta)
         },
       },
     ).catch((e) => {
@@ -107,7 +166,9 @@ export default function App() {
       .then((d) => {
         if (!vivo) return
         setData(d)
-        consagrar(indiceInicial(d))
+        const idx = pendienteRef.current != null ? pendienteRef.current : indiceInicial(d)
+        pendienteRef.current = null
+        consagrar(idx)
       })
       .catch((e) => vivo && setError(e.message))
       .finally(() => vivo && setCargando(false))
@@ -195,6 +256,86 @@ export default function App() {
     setTimeout(() => setAviso(null), 2600)
   }
 
+  function recordar(entrada) {
+    setDiario((prev) => {
+      const nuevo = [
+        entrada,
+        ...prev.filter(
+          (e) => !(e.simbolo === entrada.simbolo && e.intervalo === entrada.intervalo && e.indice === entrada.indice),
+        ),
+      ].slice(0, 24)
+      try {
+        localStorage.setItem('vela-rota:diario', JSON.stringify(nuevo))
+      } catch {
+        /* sin almacenamiento */
+      }
+      return nuevo
+    })
+  }
+
+  function narrarTexto(texto, meta) {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    synth.cancel()
+    const voces = synth.getVoices()
+    const voz = voces.find((v) => /^es[-_]/i.test(v.lang)) || voces.find((v) => /spanish|español/i.test(v.name))
+    const cabecera = meta?.carta?.nombre ? `${meta.carta.nombre}. ` : ''
+    const u = new SpeechSynthesisUtterance(cabecera + texto)
+    if (voz) u.voice = voz
+    u.lang = voz?.lang || 'es-ES'
+    u.rate = 0.96
+    u.pitch = 0.9
+    u.onend = () => setHablando(false)
+    setHablando(true)
+    synth.speak(u)
+  }
+
+  function detenerVoz() {
+    window.speechSynthesis?.cancel()
+    setHablando(false)
+  }
+
+  function alternarVoz() {
+    const siguiente = !vozOn
+    setVozOn(siguiente)
+    if (!siguiente) detenerVoz()
+    else if (lectura?.texto) narrarTexto(lectura.texto, lectura)
+  }
+
+  async function alDescargarTirada() {
+    if (!data?.tirada) return
+    const canvas = await generarPergaminoTirada(data.tirada, {
+      symbol: simbolo,
+      interval: intervalo,
+      modo: data.tirada.modo,
+    })
+    descargarPergamino(canvas, `tirada-${simbolo}-${intervalo}.png`)
+  }
+
+  function restaurar(entrada) {
+    detenerVoz()
+    const mismo = entrada.simbolo === simbolo && entrada.intervalo === intervalo && entrada.modo === modo
+    if (mismo) {
+      consagrar(entrada.indice)
+      return
+    }
+    pendienteRef.current = entrada.indice
+    setCargando(true)
+    setError(null)
+    setSimbolo(entrada.simbolo)
+    setIntervalo(entrada.intervalo)
+    setModo(entrada.modo)
+  }
+
+  function borrarDiario() {
+    setDiario([])
+    try {
+      localStorage.removeItem('vela-rota:diario')
+    } catch {
+      /* sin almacenamiento */
+    }
+  }
+
   const vol = data?.volatilidad || { global: 0.25, ultima: 0.25, direccion: 0 }
   const clases = ['app', vol.global > 0.6 ? 'vol-alta' : 'vol-baja']
   if (vol.ultima > 0.65 && vol.direccion < 0) clases.push('derrame')
@@ -253,6 +394,9 @@ export default function App() {
           <button type="button" className={`vivo ${enVivo ? 'vivo-on' : ''}`} onClick={() => setEnVivo((v) => !v)}>
             {enVivo ? '● en vivo' : '○ pausado'}
           </button>
+          <button type="button" className={`vivo ${sigilosOn ? 'vivo-on' : ''}`} onClick={() => setSigilosOn((v) => !v)}>
+            {sigilosOn ? '✦ sigilos' : '✧ sigilos'}
+          </button>
         </div>
 
         <CandleChart
@@ -260,13 +404,14 @@ export default function App() {
           sigilos={data?.sigilos}
           selectedIndex={seleccion}
           onSelect={consagrar}
+          mostrarSigilos={sigilosOn}
         />
 
         <div className="leyenda">
           <span><i className="punto punto-alza" /> alza = carta derecha</span>
           <span><i className="punto punto-baja" /> baja = carta invertida</span>
           <span><i className="punto punto-cruz" /> doji = tendida en cruz</span>
-          <span className="glifo-pista">recorre el gráfico y clickea una vela para consagrarla</span>
+          <span className="glifo-pista">recorre el gráfico y pulsa una vela para consagrarla</span>
         </div>
       </section>
 
@@ -275,14 +420,22 @@ export default function App() {
           <aside className="oraculo">
         <div className="oraculo-cabecera">
           <h2 className="seccion-titulo">La Tirada</h2>
-          <div className="modo">
-            <button type="button" className={modo === 'tiempo' ? 'activo' : ''} onClick={() => cambiarModo('tiempo')}>Tiempo</button>
-            <button type="button" className={modo === 'cruz' ? 'activo' : ''} onClick={() => cambiarModo('cruz')}>Cruz</button>
-          </div>
+          <label className="control modo-select">
+            <select value={modo} onChange={(e) => cambiarModo(e.target.value)}>
+              {MODOS.map((m) => (
+                <option key={m} value={m}>{ETIQUETA_MODO[m]}</option>
+              ))}
+            </select>
+          </label>
         </div>
-        <p className="seccion-glosa">
-          {modo === 'cruz' ? 'cinco velas en cruz, del deseo a su desenlace' : 'tres velas del ciclo, leídas como arcana'}
-        </p>
+        <p className="seccion-glosa">{GLOSA_MODO[modoTirada] || ''}</p>
+
+        {data?.clima ? (
+          <div className="clima">
+            <span className="clima-fuerte">{data.clima.elemento} · casa de {data.clima.palo}</span>
+            <p>{data.clima.texto}</p>
+          </div>
+        ) : null}
 
         <div className="pregunta">
           <input
@@ -307,7 +460,7 @@ export default function App() {
                   />
                 </div>
               ))
-            : Array.from({ length: modo === 'cruz' ? 5 : 3 }).map((_, i) => (
+            : Array.from({ length: CARTAS_POR_MODO[modoTirada] || 3 }).map((_, i) => (
                 <div key={i} className="tarot tarot-vacia">
                   <span className="tarot-glifo">✧</span>
                 </div>
@@ -320,8 +473,30 @@ export default function App() {
             {data.tirada.mandato.pregunta ? (
               <p className="mandato-pregunta">«{data.tirada.mandato.pregunta}»</p>
             ) : null}
+            {data.tirada.mandato.analisis?.texto ? (
+              <p className="mandato-analisis">{data.tirada.mandato.analisis.texto}</p>
+            ) : null}
             <p className="mandato-sintesis">{data.tirada.mandato.sintesis}</p>
             <p className="mandato-cierre">{data.tirada.mandato.cierre}</p>
+          </div>
+        ) : null}
+
+        {diario.length ? (
+          <div className="diario">
+            <div className="diario-cabecera">
+              <h3 className="seccion-titulo">Diario</h3>
+              <button type="button" onClick={borrarDiario}>vaciar</button>
+            </div>
+            <ul>
+              {diario.slice(0, 6).map((e, i) => (
+                <li key={`${e.ts}-${i}`}>
+                  <button type="button" onClick={() => restaurar(e)}>
+                    <span>{e.carta}</span>
+                    <i>{e.simbolo} · {e.intervalo} · {ETIQUETA_MODO[e.modo] || e.modo}</i>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
       </aside>
@@ -338,6 +513,10 @@ export default function App() {
                 <button type="button" onClick={alCopiar}>copiar enlace</button>
                 <button type="button" onClick={alCompartir}>compartir</button>
                 <button type="button" onClick={alDescargar}>descargar</button>
+                <button type="button" onClick={alDescargarTirada}>tirada</button>
+                <button type="button" className={vozOn ? 'activo' : ''} onClick={alternarVoz}>
+                  {hablando ? 'detener voz' : vozOn ? '♪ voz' : '♪ voz off'}
+                </button>
               </div>
               <h2 className="seccion-titulo">
                 {lectura.posicionTitulo}

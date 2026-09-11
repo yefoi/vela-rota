@@ -7,6 +7,7 @@ import {
   generarTirada,
   generarLecturaIndividual,
   volatilidad,
+  climaDelMazo,
   lecturaIA,
 } from './oracle.js'
 import { analizarBeats, listarGeneros } from './cronica.js'
@@ -40,19 +41,23 @@ export async function manejarVelas(query) {
   return { symbol, interval, fuente, velas, aviso: error || null, volatilidad: volatilidad(velas) }
 }
 
+const MODOS = ['tiempo', 'cruz', 'herradura', 'si_no', 'dia']
+
 export async function manejarOracle(cuerpo) {
   const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
-  const modo = cuerpo?.modo === 'cruz' ? 'cruz' : 'tiempo'
+  const modo = MODOS.includes(cuerpo?.modo) ? cuerpo.modo : 'tiempo'
   const pregunta = normalizarPregunta(cuerpo?.pregunta)
   const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
+  const sigilos = generarSigilos(symbol, interval, velas)
   return {
     symbol,
     interval,
     fuente,
     aviso: error || null,
     velas,
-    sigilos: generarSigilos(symbol, interval, velas),
+    sigilos,
     volatilidad: volatilidad(velas),
+    clima: climaDelMazo(sigilos),
     tirada: generarTirada(symbol, interval, velas, modo, pregunta),
   }
 }

@@ -304,7 +304,7 @@ export default function Cronica({
         </div>
         {relato.length ? (
           <p className={`cronica-pista ${hayNuevos ? 'hay-nuevos' : ''}`}>
-            {hayNuevos ? 'hay velas nuevas: podés continuar la saga' : 'la saga está al día con el mercado'}
+            {hayNuevos ? 'hay velas nuevas: puedes continuar la saga' : 'la saga está al día con el mercado'}
           </p>
         ) : null}
 
@@ -363,7 +363,7 @@ export default function Cronica({
           </div>
         ) : (
           <p className="vacio">
-            El pergamino está en blanco. Elegí un género, escribí una premisa si querés, y pulsá «Tejer».
+            El pergamino está en blanco. Elige un género, escribe una premisa si quieres y pulsa «Tejer».
           </p>
         )}
       </section>
