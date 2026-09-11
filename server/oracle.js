@@ -425,17 +425,17 @@ function construirPrompt(symbol, interval, candle, procedural) {
 // Lectura en streaming: el oráculo escribe en tiempo real.
 // ---------------------------------------------------------------------------
 
-async function* flujoModelo(base, apiKey, modelo, prompt, signal) {
+async function* flujoModelo(base, apiKey, modelo, prompt, system, signal) {
   const api = apiDeModelo(modelo)
   const url = api === 'responses' ? `${base}/responses` : `${base}/chat/completions`
   const cuerpo = api === 'responses'
-    ? { model: modelo, instructions: PROMPT_SISTEMA, input: prompt, stream: true }
+    ? { model: modelo, instructions: system, input: prompt, stream: true }
     : {
         model: modelo,
         temperature: 0.9,
         stream: true,
         messages: [
-          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'system', content: system },
           { role: 'user', content: prompt },
         ],
       }
@@ -479,48 +479,68 @@ async function* flujoModelo(base, apiKey, modelo, prompt, signal) {
   }
 }
 
-export async function lecturaIAStream(symbol, interval, candle, procedural, { onChunk, signal } = {}) {
+export async function* transmitirTexto({ prompt, system = PROMPT_SISTEMA, signal, onModelo } = {}) {
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    for (const parrafo of procedural.parrafos) {
-      onChunk?.(parrafo + '\n\n')
-      await dormir(150)
-    }
-    return { motor: 'oraculo-local' }
-  }
-
+  if (!apiKey) throw new Error('sin llave')
   const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '')
   const primario = process.env.OPENAI_MODEL || 'deepseek-v4-flash'
   const respaldo = process.env.OPENAI_FALLBACK_MODEL || ''
-  const prompt = construirPrompt(symbol, interval, candle, procedural)
   const intentos = [...new Set([primario, respaldo].filter(Boolean))]
 
   let ultimoError = null
   for (const modelo of intentos) {
     let emitido = false
     try {
-      let total = ''
-      for await (const trozo of flujoModelo(base, apiKey, modelo, prompt, signal)) {
-        emitido = true
-        total += trozo
-        onChunk?.(trozo)
+      for await (const trozo of flujoModelo(base, apiKey, modelo, prompt, system, signal)) {
+        if (!emitido) {
+          emitido = true
+          onModelo?.(modelo)
+        }
+        yield trozo
       }
-      if (total.trim()) return { motor: 'ia', modelo }
-      throw new Error('respuesta vacía')
+      return
     } catch (err) {
       ultimoError = err
-      if (emitido) {
-        onChunk?.('\n\n[el oráculo enmudeció a mitad del rezo]')
-        return { motor: 'ia', modelo, error: String(err?.message || err) }
-      }
+      if (emitido) throw err
     }
   }
+  throw ultimoError || new Error('sin modelos disponibles')
+}
 
+export async function lecturaIAStream(symbol, interval, candle, procedural, { onChunk, signal } = {}) {
+  if (!process.env.OPENAI_API_KEY) {
+    return volcarProcedural(procedural, onChunk, 150)
+  }
+
+  const prompt = construirPrompt(symbol, interval, candle, procedural)
+  let modelo = null
+  let emitido = false
+  let total = ''
+  try {
+    for await (const trozo of transmitirTexto({ prompt, signal, onModelo: (m) => { modelo = m } })) {
+      emitido = true
+      total += trozo
+      onChunk?.(trozo)
+    }
+  } catch (err) {
+    if (emitido) {
+      onChunk?.('\n\n[el oráculo enmudeció a mitad del rezo]')
+      return { motor: 'ia', modelo, error: String(err?.message || err) }
+    }
+    const info = await volcarProcedural(procedural, onChunk, 120)
+    return { ...info, errorIA: String(err?.message || err) }
+  }
+
+  if (total.trim()) return { motor: 'ia', modelo }
+  return volcarProcedural(procedural, onChunk, 120)
+}
+
+async function volcarProcedural(procedural, onChunk, pausa) {
   for (const parrafo of procedural.parrafos) {
     onChunk?.(parrafo + '\n\n')
-    await dormir(120)
+    await dormir(pausa)
   }
-  return { motor: 'oraculo-local', errorIA: String(ultimoError?.message || ultimoError) }
+  return { motor: 'oraculo-local' }
 }
 
 function dormir(ms) {

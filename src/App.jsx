@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { consultarAltar, obtenerConfig, streamLectura } from './api.js'
 import CandleChart from './components/CandleChart.jsx'
+import Cronica from './components/Cronica.jsx'
 import Ruido from './components/Ruido.jsx'
 import TarotCard from './components/TarotCard.jsx'
 import VelasDeCera from './components/VelasDeCera.jsx'
@@ -18,6 +19,7 @@ const RESTAURO = {
   modo: params.get('modo') === 'cruz' ? 'cruz' : 'tiempo',
   vela: params.has('vela') ? Number(params.get('vela')) : null,
   pregunta: params.get('pregunta') || '',
+  vista: params.get('vista') === 'cronica' ? 'cronica' : 'oraculo',
 }
 
 const ETIQUETA_FUENTE = {
@@ -29,6 +31,7 @@ const ETIQUETA_FUENTE = {
 
 export default function App() {
   const [config, setConfig] = useState(null)
+  const [vista, setVista] = useState(RESTAURO.vista)
   const [simbolo, setSimbolo] = useState(RESTAURO.simbolo)
   const [intervalo, setIntervalo] = useState(RESTAURO.intervalo)
   const [modo, setModo] = useState(RESTAURO.modo)
@@ -125,11 +128,12 @@ export default function App() {
     const p = new URLSearchParams()
     p.set('simbolo', simbolo)
     p.set('i', intervalo)
+    if (vista === 'cronica') p.set('vista', 'cronica')
     if (modo === 'cruz') p.set('modo', 'cruz')
     if (pregunta) p.set('pregunta', pregunta)
     if (seleccion != null) p.set('vela', String(seleccion))
     window.history.replaceState(null, '', `${window.location.pathname}?${p.toString()}`)
-  }, [simbolo, intervalo, modo, pregunta, seleccion])
+  }, [simbolo, intervalo, modo, pregunta, seleccion, vista])
 
   function cambiarModo(nuevo) {
     if (nuevo === modo) return
@@ -201,6 +205,10 @@ export default function App() {
         </div>
 
         <div className="controles">
+          <div className="vistas">
+            <button type="button" className={vista === 'oraculo' ? 'activo' : ''} onClick={() => setVista('oraculo')}>Oráculo</button>
+            <button type="button" className={vista === 'cronica' ? 'activo' : ''} onClick={() => setVista('cronica')}>Crónica</button>
+          </div>
           <label className="control">
             <span>ofrenda</span>
             <select value={simbolo} onChange={(e) => { setSimbolo(e.target.value); setCargando(true); setError(null) }}>
@@ -250,7 +258,9 @@ export default function App() {
         </div>
       </section>
 
-      <aside className="oraculo">
+      {vista === 'oraculo' ? (
+        <>
+          <aside className="oraculo">
         <div className="oraculo-cabecera">
           <h2 className="seccion-titulo">La Tirada</h2>
           <div className="modo">
@@ -350,6 +360,10 @@ export default function App() {
           <p className="vacio">Ninguna vela consagrada todavía.</p>
         )}
       </section>
+        </>
+      ) : (
+        <Cronica simbolo={simbolo} intervalo={intervalo} seleccion={seleccion} onSeleccion={setSeleccion} />
+      )}
 
       <VelasDeCera />
 

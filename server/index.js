@@ -8,9 +8,12 @@ import {
   manejarVelas,
   manejarOracle,
   manejarLectura,
+  manejarCronica,
   prepararLectura,
+  prepararCronica,
 } from './handlers.js'
 import { lecturaIAStream } from './oracle.js'
+import { cronicaIAStream } from './cronica.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -43,6 +46,14 @@ app.post('/api/lectura', async (req, res) => {
   try {
     const datos = await manejarLectura(req.body || {})
     res.status(datos.status || 200).json(datos)
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message || e) })
+  }
+})
+
+app.post('/api/cronica', async (req, res) => {
+  try {
+    res.json(await manejarCronica(req.body || {}))
   } catch (e) {
     res.status(502).json({ error: String(e?.message || e) })
   }
@@ -98,6 +109,38 @@ function metaDe(procedural, extra) {
     openTime: procedural.openTime,
   }
 }
+
+// La crónica se teje acto por acto (Server-Sent Events)
+app.get('/api/cronica-stream', async (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  })
+  const enviar = (evento, datos) => res.write(`event: ${evento}\ndata: ${JSON.stringify(datos)}\n\n`)
+
+  try {
+    const { symbol, interval, fuente, beats, trama, protagonista, premisa } = await prepararCronica({
+      symbol: req.query.symbol,
+      interval: req.query.interval,
+      limit: req.query.limit,
+      capitulos: req.query.capitulos,
+      premisa: req.query.premisa,
+    })
+    enviar('meta', { symbol, interval, fuente, beats, trama, protagonista, premisa })
+    const info = await cronicaIAStream(beats, {
+      symbol,
+      premisa,
+      onCapitulo: (capitulo) => enviar('capitulo', capitulo),
+      onTrozo: (trozo) => enviar('trozo', trozo),
+    })
+    enviar('fin', info)
+  } catch (e) {
+    enviar('fin', { motor: 'oraculo-local', error: String(e?.message || e) })
+  }
+  res.end()
+})
 
 const dist = path.resolve(__dirname, '..', 'dist')
 if (fs.existsSync(dist)) {

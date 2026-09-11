@@ -9,6 +9,7 @@ import {
   volatilidad,
   lecturaIA,
 } from './oracle.js'
+import { analizarBeats } from './cronica.js'
 
 export function validar(symbol, interval, limit) {
   const s = SIMBOLOS.includes(symbol) ? symbol : 'BTCUSDT'
@@ -69,4 +70,35 @@ export async function manejarLectura(cuerpo) {
   if (!datos.procedural) return { status: 404, error: 'vela no encontrada' }
   const lectura = await lecturaIA(datos.symbol, datos.interval, datos.vela, datos.procedural)
   return { symbol: datos.symbol, interval: datos.interval, fuente: datos.fuente, indice: datos.indice, lectura }
+}
+
+function capitulosDe(valor) {
+  return Math.min(Math.max(Number(valor) || 5, 3), 8)
+}
+
+export async function manejarCronica(cuerpo) {
+  const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
+  const capitulos = capitulosDe(cuerpo?.capitulos)
+  const { fuente, velas, error } = await obtenerVelas(symbol, interval, limit)
+  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos)
+  return {
+    symbol,
+    interval,
+    fuente,
+    aviso: error || null,
+    velas,
+    beats,
+    trama,
+    protagonista,
+    volatilidad: volatilidad(velas),
+  }
+}
+
+export async function prepararCronica(cuerpo) {
+  const { symbol, interval, limit } = validar(cuerpo?.symbol, cuerpo?.interval, cuerpo?.limit)
+  const capitulos = capitulosDe(cuerpo?.capitulos)
+  const premisa = normalizarPregunta(cuerpo?.premisa)
+  const { fuente, velas } = await obtenerVelas(symbol, interval, limit)
+  const { beats, trama, protagonista } = analizarBeats(symbol, interval, velas, capitulos)
+  return { symbol, interval, fuente, velas, beats, trama, protagonista, premisa }
 }

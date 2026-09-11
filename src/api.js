@@ -35,13 +35,18 @@ export function pedirLectura(symbol, interval, index, limit = 48) {
   })
 }
 
-// Lee el torrente SSE de /api/lectura-stream y va avisando por callbacks.
-export async function streamLectura(
-  { symbol, interval, index, limit = 48, pregunta = '' },
-  { onMeta, onChunk, onFin, signal } = {},
-) {
-  const qs = new URLSearchParams({ symbol, interval, index, limit, pregunta })
-  const res = await fetch(`${BASE}/lectura-stream?${qs}`, { signal })
+export function analizarCronica({ symbol, interval, capitulos = 5, limit = 48 }) {
+  return pedir('/cronica', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbol, interval, capitulos, limit }),
+  })
+}
+
+// Lector común de Server-Sent Events.
+async function leerEventos(ruta, params, manejadores, signal) {
+  const qs = new URLSearchParams(params)
+  const res = await fetch(`${BASE}${ruta}?${qs}`, { signal })
   if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
 
   const reader = res.body.getReader()
@@ -68,10 +73,32 @@ export async function streamLectura(
         } catch {
           continue
         }
-        if (evento === 'meta') onMeta?.(json)
-        else if (evento === 'trozo') onChunk?.(json.texto)
-        else if (evento === 'fin') onFin?.(json)
+        manejadores[evento]?.(json)
       }
     }
   }
+}
+
+export function streamLectura(
+  { symbol, interval, index, limit = 48, pregunta = '' },
+  { onMeta, onChunk, onFin, signal } = {},
+) {
+  return leerEventos(
+    '/lectura-stream',
+    { symbol, interval, index, limit, pregunta },
+    { meta: onMeta, trozo: (d) => onChunk?.(d.texto), fin: onFin },
+    signal,
+  )
+}
+
+export function streamCronica(
+  { symbol, interval, capitulos = 5, limit = 48, premisa = '' },
+  { onMeta, onCapitulo, onTrozo, onFin, signal } = {},
+) {
+  return leerEventos(
+    '/cronica-stream',
+    { symbol, interval, capitulos, limit, premisa },
+    { meta: onMeta, capitulo: onCapitulo, trozo: onTrozo, fin: onFin },
+    signal,
+  )
 }

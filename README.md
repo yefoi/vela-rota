@@ -67,6 +67,9 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
   según lo que responda desde el servidor.
 - **Tiradas**: `tiempo` (pasado/presente/futuro) o `cruz` (5 cartas). El fiel
   puede formular una pregunta que entra en la lectura.
+- **Crónica** (modo aparte): el vaivén del precio se vuelve una saga por actos.
+  Cada vela es un ánimo (euforia, pánico, calma, ruina…) y la IA teje la
+  historia acto por acto, continuando lo ya escrito. Acepta una premisa.
 - **Lectura en streaming**: el oráculo escribe token a token vía SSE.
 - **En vivo**: refresco periódico del altar (pausable).
 - **Volatilidad**: el ruido, el glitch y la cera reaccionan al rango real;
@@ -83,6 +86,10 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 - `POST /api/lectura` — lectura completa de una vela (`{ symbol, interval, index, pregunta }`).
 - `GET  /api/lectura-stream?symbol=…&interval=…&index=…&pregunta=…` — SSE con
   eventos `meta`, `trozo` y `fin`.
+- `POST /api/cronica` — `{ symbol, interval, capitulos: 3..8 }` → velas + `beats`
+  (ánimo por acto) + `trama`.
+- `GET  /api/cronica-stream?symbol=…&interval=…&capitulos=…&premisa=…` — SSE con
+  `meta`, `capitulo`, `trozo` y `fin`.
 
 ## Aviso
 
