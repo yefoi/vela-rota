@@ -360,6 +360,7 @@ export default function Cronica({
             <p className="motor">
               motor: {motor?.motor === 'ia' ? `inteligencia oracular · ${motor.modelo || ''}` : motor ? 'oráculo local' : '…'}
             </p>
+            <p className="disclaimer">Ficción generada por IA. No es asesoría financiera ni una señal de compra o venta.</p>
           </div>
         ) : (
           <p className="vacio">

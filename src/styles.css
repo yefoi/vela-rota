@@ -800,7 +800,7 @@ body {
 .error {
   position: fixed;
   left: 50%;
-  bottom: 26px;
+  bottom: 56px;
   z-index: 950;
   transform: translateX(-50%);
   padding: 12px 20px;
@@ -979,7 +979,7 @@ body {
 .aviso {
   position: fixed;
   left: 50%;
-  bottom: 26px;
+  bottom: 56px;
   z-index: 950;
   transform: translateX(-50%);
   padding: 10px 18px;
@@ -1377,6 +1377,71 @@ body {
   flex: 0 0 52%;
   max-width: 52%;
 }
+
+/* ------------------------------------------------------------ disclaimer */
+
+.cinta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 940;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: rgba(10, 7, 6, 0.96);
+  border-top: 1px solid var(--oro-tenue);
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  text-align: center;
+}
+
+.cinta .cinta-sep { color: var(--oro); }
+
+body { padding-bottom: 46px; }
+
+.disclaimer {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--oro-tenue);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.aviso-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 4, 3, 0.94);
+  backdrop-filter: blur(3px);
+}
+
+.aviso-caja {
+  max-width: 620px;
+  width: 100%;
+  padding: 34px 38px;
+  border: 1px solid var(--oro-tenue);
+  background: linear-gradient(165deg, #1a1310, #0b0706 60%, #140d0b);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(217, 180, 91, 0.08);
+}
+
+.aviso-titulo { font-size: 1.6rem; margin-bottom: 8px; }
+.aviso-lead { margin: 0 0 16px; font-style: italic; color: var(--oro); }
+.aviso-caja p { margin: 0 0 12px; line-height: 1.55; color: var(--tinta); }
+.aviso-caja strong { color: var(--cera); }
+.aviso-boton { margin-top: 12px; }
 
 /* ------------------------------------------------------------ adaptativo */
 

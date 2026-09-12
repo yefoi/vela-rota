@@ -103,4 +103,7 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 
 ## Aviso
 
-No es consejo de inversión. Es liturgia.
+VELA ROTA es una obra de ficción. Genera cartas y crónicas inventadas a partir
+de precios reales de mercado. No es asesoría financiera, ni análisis de
+inversión, ni una recomendación de compra, venta o tenencia de ningún activo.
+No tomes decisiones de inversión basándote en nada de lo que aparece aquí.

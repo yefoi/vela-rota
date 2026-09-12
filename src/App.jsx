@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { consultarAltar, obtenerConfig, streamLectura } from './api.js'
 import CandleChart from './components/CandleChart.jsx'
 import Cronica from './components/Cronica.jsx'
+import Disclaimer from './components/Disclaimer.jsx'
 import Ruido from './components/Ruido.jsx'
 import TarotCard from './components/TarotCard.jsx'
 import VelasDeCera from './components/VelasDeCera.jsx'
@@ -348,6 +349,7 @@ export default function App() {
   return (
     <div className={clases.join(' ')} style={{ '--vol': String(vol.global), '--vol-ultima': String(vol.ultima) }}>
       <Ruido />
+      <Disclaimer />
 
       <header className="cabecera">
         <div className="titulo-bloque">
@@ -545,6 +547,7 @@ export default function App() {
                 <div><dt>volumen</dt><dd>{num(lectura.volumen)}</dd></div>
                 <div><dt>cambio</dt><dd className={lectura.cambio >= 0 ? 'sube' : 'baja'}>{lectura.cambioTxt}</dd></div>
               </dl>
+              <p className="disclaimer">Ficción generada por IA. No es asesoría financiera ni una señal de compra o venta.</p>
             </div>
           </>
         ) : (
@@ -574,7 +577,7 @@ export default function App() {
       <footer className="pie">
         <span>VELA ROTA</span>
         <span>el precio no predice: revela</span>
-        <span>no es consejo de inversión · es liturgia</span>
+        <span>obra de ficción · no es asesoría financiera · es liturgia</span>
       </footer>
 
       {aviso ? <div className="aviso">{aviso}</div> : null}
