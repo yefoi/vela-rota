@@ -8,42 +8,42 @@ const ROMANOS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'X
 export const GENEROS = {
   epico: {
     nombre: 'Épico',
-    estilo: 'saga heroica de reinos, tormentas y juramentos; tono solemne y grandioso',
+    estilo: 'fantasía heroica',
     aliados: ['Bruma', 'Tobías', 'el Juglar Ciego', 'Halvard', 'la Doncella de Hierro'],
     objetos: ['una corona partida', 'un estandarte raído', 'una espada sin nombre', 'un cuerno de guerra'],
     lugares: ['la Ciudadela', 'el Paso del Norte', 'el Puerto Gris', 'las Llanuras de Sal'],
   },
   noir: {
     nombre: 'Noir',
-    estilo: 'novela negra de lluvia, deudas y traiciones; tono seco, cínico y nocturno',
+    estilo: 'novela negra',
     aliados: ['Vera', 'el Gordo Sal', 'la Cantante', 'el Sargento Ruiz'],
     objetos: ['una pistola con una sola bala', 'un expediente manchado', 'una llave de habitación'],
     lugares: ['el Bar La Última', 'el Muelle 7', 'la Comisaría Vieja', 'el Hotel Rialto'],
   },
   lovecraft: {
     nombre: 'Horror cósmico',
-    estilo: 'cultos, abismos y locura; tono onírico y aterrador, de pesadilla lenta',
+    estilo: 'terror',
     aliados: ['el Bibliotecario', 'el Farero', 'Hester', 'la Expedición de Miskatonic'],
     objetos: ['un tomo encuadernado en piel', 'un amuleto de obsidiana', 'un espejo que no refleja'],
     lugares: ['Innsmouth', 'el Arrecife Sumergido', 'la Casa Marchita', 'el Faro Nuevo'],
   },
   western: {
     nombre: 'Western',
-    estilo: 'frontera de forajidos, polvo y venganza; tono áspero y cansado',
+    estilo: 'oeste',
     aliados: ['Cassidy', 'el Predicador', 'Nube Roja', 'la Viuda Dawson'],
     objetos: ['un revólver de seis tiros', 'una recompensa arrugada', 'un caballo cojo'],
     lugares: ['Tombstone Flats', 'el Cañón Rojo', 'la Frontera', 'el Saloon del Fin'],
   },
   cyberpunk: {
     nombre: 'Cyberpunk',
-    estilo: 'distopía de neón, corporaciones y cuerpos prestados; tono vertiginoso y frío',
+    estilo: 'ciencia ficción',
     aliados: ['Vex', 'Nube', 'Kira-9', 'el Fixer'],
     objetos: ['un implante robado', 'un chip cifrado', 'un dron de bolsillo'],
     lugares: ['el Sector Bajo', 'la Torre Delta', 'el Mercado de Carne', 'los Muelles de Datos'],
   },
   tragedia: {
     nombre: 'Tragedia griega',
-    estilo: 'destino, hybris y caída inexorable; coro y presagios, tono elevado y fatal',
+    estilo: 'tragedia',
     aliados: ['el Coro', 'Tiresias', 'Antígona', 'el Mensajero'],
     objetos: ['una máscara de oro', 'un oráculo mal leído', 'una copa envenenada'],
     lugares: ['la Acrópolis', 'el Oráculo de Delfos', 'el Ágora', 'el Mar Egeo'],
@@ -51,16 +51,16 @@ export const GENEROS = {
 }
 
 const MOODS = {
-  mania: { titulo: 'La Manía', tono: 'euforia', glosa: 'la multitud danza al borde del abismo y lo llama gloria' },
-  euforia: { titulo: 'La Euforia', tono: 'alegría', glosa: 'el aire huele a fiesta y a exceso' },
-  ambicion: { titulo: 'La Ambición', tono: 'codicia', glosa: 'un paso más, siempre un paso más' },
-  calma: { titulo: 'La Calma', tono: 'sosiego', glosa: 'el mundo contiene el aliento' },
-  duda: { titulo: 'La Duda', tono: 'incertidumbre', glosa: 'nadie recuerda hacia dónde iba' },
-  temor: { titulo: 'El Temor', tono: 'sombra', glosa: 'el frío entra por las grietas' },
-  panico: { titulo: 'El Pánico', tono: 'horror', glosa: 'todos corren hacia la misma puerta' },
-  ruina: { titulo: 'La Ruina', tono: 'tragedia', glosa: 'lo que se alzó yace entre escombros' },
-  rechazo: { titulo: 'El Rechazo', tono: 'desdén', glosa: 'la cima negó el paso a los que subían' },
-  rescate: { titulo: 'El Rescate', tono: 'esperanza', glosa: 'una mano emerge del agua oscura' },
+  mania: { titulo: 'La Manía', tono: 'euforia', glosa: 'la subida se desborda' },
+  euforia: { titulo: 'La Euforia', tono: 'alegría', glosa: 'una subida clara' },
+  ambicion: { titulo: 'La Ambición', tono: 'codicia', glosa: 'una subida moderada' },
+  calma: { titulo: 'La Calma', tono: 'sosiego', glosa: 'apenas hay movimiento' },
+  duda: { titulo: 'La Duda', tono: 'incertidumbre', glosa: 'movimiento lateral, sin dirección' },
+  temor: { titulo: 'El Temor', tono: 'sombra', glosa: 'una bajada moderada' },
+  panico: { titulo: 'El Pánico', tono: 'horror', glosa: 'una bajada fuerte' },
+  ruina: { titulo: 'La Ruina', tono: 'tragedia', glosa: 'un desplome' },
+  rechazo: { titulo: 'El Rechazo', tono: 'desdén', glosa: 'un rechazo en la parte alta' },
+  rescate: { titulo: 'El Rescate', tono: 'esperanza', glosa: 'un rebote desde la parte baja' },
 }
 
 export function listarGeneros() {
@@ -180,9 +180,9 @@ function funcionNarrativa(k, total, mood, posFuerte, negFuerte) {
 
 function tramar(cambios) {
   const total = cambios.reduce((a, b) => a + b, 0)
-  if (total > cambios.length * 0.01) return 'Un ascenso que no conoce la modestia.'
-  if (total < -cambios.length * 0.01) return 'Una caída que arrastra cuanto toca.'
-  return 'Un ciclo que sube, cae y vuelve a empezar, sin prometer nada.'
+  if (total > cambios.length * 0.01) return 'La serie sube de principio a fin.'
+  if (total < -cambios.length * 0.01) return 'La serie baja de principio a fin.'
+  return 'La serie sube y baja sin una tendencia clara.'
 }
 
 function protagonista(symbol, genero) {
@@ -290,11 +290,11 @@ export function resumenDeBeat(beat) {
 // ---------------------------------------------------------------------------
 
 const ESTILO_BASE =
-  'Eres el cronista de Vela Rota. Conviertes el vaivén del mercado en una crónica épica y continua. ' +
-  'Escribes en español, con tono literario y oscuro. Jamás rompes el personaje, jamás explicas que es una ' +
-  'metáfora del precio, jamás mencionas velas, gráficos, porcentajes ni dinero: todo es mundo, gente y destino. ' +
-  'Los personajes, objetos y consecuencias persisten de acto en acto y se transforman. ' +
-  'Devuelve sólo la prosa del acto, un único párrafo, sin títulos, listas ni acotaciones.'
+  'Eres el cronista de Vela Rota. Conviertes el movimiento del mercado en una historia de ficción. ' +
+  'Escribes en español, con frases cortas y directas, sin adornos. No rompes el personaje y no explicas ' +
+  'la metáfora del mercado. No menciones velas, gráficos, porcentajes ni dinero. ' +
+  'Los personajes y objetos continúan de un acto al siguiente. ' +
+  'Devuelve solo la prosa del acto, un único párrafo, sin títulos ni listas.'
 
 const cache = new Map()
 const CACHE_TTL = 15 * 60_000
@@ -358,7 +358,7 @@ export async function cronicaIAStream(beats, opciones = {}) {
         }
       } catch {
         if (texto) {
-          onTrozo?.({ indice: beat.indice, texto: '\n\n[el cronista enmudeció a mitad del acto]' })
+          onTrozo?.({ indice: beat.indice, texto: '\n\n[la generación se interrumpió]' })
         } else {
           texto = capituloProcedural(beat, k, premisa, capitulos)
           onTrozo?.({ indice: beat.indice, texto })
@@ -454,44 +454,44 @@ const ECOS = {
 
 const PLANTILLAS = {
   mania: [
-    'El mundo enloqueció de golpe: {proto} lo vio todo subir y creyó tocar la gloria. En las plazas gritaban su nombre como el de un dios nuevo, y nadie notaba que tanto miedo se había disfrazado de alegría.',
-    'Fue una fiebre, no un día. {proto} repartió promesas como monedas y todos las guardaron, seguros de que el mañana sería todavía más alto. Ninguno miró hacia abajo, porque abajo ya no recordaban que existía.',
+    'Todo subió sin control y {proto} creyó que no podía fallar. Los demás hicieron lo mismo, y nadie se detuvo a pensar.',
+    '{proto} celebró antes de tiempo y gastó lo que no tenía. La euforia se contagió a todos los presentes.',
   ],
   euforia: [
-    'Todo floreció a la vez y {proto} se dejó querer. Las mesas se llenaron, las campanas tocaron sin motivo, y hasta los que habían jurado prudencia brindaron con las dos manos.',
-    '{proto} sonrió por primera vez en mucho tiempo. El viento soplaba a favor y el mundo parecía un lugar amable, ofrecido, casi comprado.',
+    'Las cosas iban bien y {proto} se sintió aliviado. Los demás también lo notaron y se acercaron a él.',
+    '{proto} pasó un buen rato y se permitió confiar. Todo parecía, por una vez, en su sitio.',
   ],
   ambicion: [
-    '{proto} guardó silencio y contó lo que tenía, y le pareció poco. Quiso un horizonte más ancho, aunque para alcanzarlo hubiera que caminar de noche.',
-    'No había peligro, se dijo {proto}, solo distancia. Y avanzó un paso más hacia la luz, sin advertir que la luz también calienta y también quema.',
+    '{proto} quiso más de lo que tenía. Aunque no hacía falta, dio un paso más.',
+    '{proto} no se conformó con lo ganado y decidió seguir. No midió bien el coste de hacerlo.',
   ],
   calma: [
-    'El tiempo se detuvo sin avisar. {proto} aprendió a escuchar el silencio y a llamarlo paz, aunque a veces sonara a espera.',
-    'Nada ocurría, y eso era una forma extraña de tenerlo todo. {proto} respiró hondo y dejó que el día pasara sin pedirle cuentas.',
+    'No pasó nada, y {proto} aprovechó para descansar. El día fue tranquilo y sin sobresaltos.',
+    '{proto} se quedó quieto y esperó. A veces no hacer nada es lo correcto.',
   ],
   duda: [
-    'La senda se bifurcó y {proto} no supo elegir. Cada camino prometía lo mismo con palabras distintas, y las palabras pesaban más que los pies.',
-    '{proto} miró atrás y adelante y no encontró respuesta en ninguno de los dos lados. Dudar, descubrió, también cansa como caminar.',
+    '{proto} no supo qué hacer y se quedó mirando. Las opciones eran varias y ninguna le convencía.',
+    '{proto} cambió de opinión dos veces y al final no hizo nada.',
   ],
   temor: [
-    'Algo se movió en la sombra y {proto} sintió el frío antes de verlo. Guardó lo que pudo bajo el abrigo y apretó el paso.',
-    'El mundo se volvió más pequeño y más filoso. {proto} contó sus pertenencias dos veces, como si la segunda vez pudiera cambiar el número.',
+    '{proto} vio que algo iba mal y se puso a la defensiva. Guardó lo que pudo y se preparó.',
+    'El ambiente se tensó y {proto} empezó a preocuparse. Prefirió no arriesgar.',
   ],
   panico: [
-    'Entonces todos corrieron a la vez. {proto} fue empujado hacia la puerta junto a desconocidos que gritaban, y en la estampida perdió la mitad de lo que era.',
-    'El suelo cedió y nadie preguntó por qué. {proto} huyó con lo puesto, y en la huida entendió que el miedo tiene las piernas más rápidas.',
+    'De pronto todos quisieron salir a la vez. {proto} perdió en la confusión parte de lo que tenía.',
+    'La situación empeoró deprisa y {proto} actuó sin pensar. Luego lo lamentó.',
   ],
   ruina: [
-    'La torre se derrumbó entera, sin aviso y sin piedad. {proto} quedó de rodillas entre los escombros de todo lo que había construido, y el polvo le cubrió la cara de ceniza.',
-    'No quedó nada en pie. {proto} buscó entre las ruinas algo que valiera la pena salvar, y solo encontró su propio nombre, escrito a medias.',
+    'Todo lo que {proto} había construido se vino abajo. Perdió la mayor parte y no pudo evitarlo.',
+    '{proto} lo perdió casi todo de golpe. Le costó aceptar que no había vuelta atrás.',
   ],
   rechazo: [
-    'La cima le negó el paso. {proto} estiró la mano hacia lo alto y el cielo le devolvió vacío, como quien cierra una puerta sin decir palabra.',
-    'Subió hasta donde pudo y allí se acabó el aire. {proto} comprendió que no toda altura está hecha para ser alcanzada.',
+    '{proto} intentó seguir subiendo y se topó con un muro. No pudo avanzar más.',
+    'La parte alta no dejó pasar a {proto}. Dio media vuelta sin conseguir lo que buscaba.',
   ],
   rescate: [
-    'Cuando ya se hundía, algo lo sostuvo. {proto} emergió del pozo con el pecho ardiente y descubrió que aún le quedaban fuerzas para un día más.',
-    'Del fondo del agua oscura salió una mano. {proto} se aferró a ella y volvió a respirar, sin saber todavía quién lo había salvado.',
+    'Cuando parecía que {proto} se hundía, algo lo sostuvo. Salió del apuro, aunque no intacto.',
+    '{proto} encontró ayuda cuando más la necesitaba. La situación dio un respiro.',
   ],
 }
 

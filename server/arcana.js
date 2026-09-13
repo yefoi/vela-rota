@@ -196,14 +196,14 @@ export const RANGOS = [
 
 export const LITURGIA = {
   apertura: [
-    'Ábranse los libros del mercado. Que la cera caiga sobre el gráfico y el ruido calle.',
-    'Invoquemos al precio, que no promete nada y sin embargo todo lo cobra.',
-    'Que la vela hable. Nosotros solo sostendremos la mecha.',
+    'El mercado abre la lectura.',
+    'Las velas muestran lo ocurrido.',
+    'Cada vela se lee como una carta.',
   ],
   cierre: [
-    'Así tendido, así leído. El precio hará su voluntad, como siempre ha hecho.',
-    'La carta no recomienda: advierte. La ejecución pertenece al fiel.',
-    'Queda dicho. Que el stop sea misericordioso y la ganancia breve.',
+    'La lectura termina aquí.',
+    'La carta describe, no aconseja.',
+    'No es una recomendación de inversión.',
   ],
 }
 

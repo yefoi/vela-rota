@@ -103,59 +103,59 @@ function describirCuerpo(candle) {
 }
 
 function fraseCuerpo({ cuerpo }) {
-  if (cuerpo < 0.08) return 'Un cuerpo apenas esbozado, casi un suspiro sin dirección'
-  if (cuerpo < 0.3) return 'Un cuerpo breve, indeciso, que no se compromete'
-  if (cuerpo < 0.6) return 'Un cuerpo medido, la voluntad justa de quien sabe esperar'
-  if (cuerpo < 0.85) return 'Un cuerpo extenso, la convicción dibujada de un solo trazo'
-  return 'Un cuerpo desmesurado, casi toda la vela, la certeza que no admite sombra'
+  if (cuerpo < 0.08) return 'cuerpo casi inexistente, sin dirección clara'
+  if (cuerpo < 0.3) return 'cuerpo pequeño, movimiento indeciso'
+  if (cuerpo < 0.6) return 'cuerpo medio, movimiento moderado'
+  if (cuerpo < 0.85) return 'cuerpo grande, movimiento firme'
+  return 'cuerpo muy grande, casi toda la vela en un solo sentido'
 }
 
 function fraseMechas({ mechaSup, mechaInf }) {
   const partes = []
-  if (mechaSup > 0.55) partes.push('una sombra superior larguísima que delata el rechazo del cielo')
-  else if (mechaSup > 0.3) partes.push('una sombra alta que coquetea con lo inalcanzable')
-  else if (mechaSup < 0.05) partes.push('sin sombra arriba, como si nada la contuviera')
-  if (mechaInf > 0.55) partes.push('una sombra inferior honda, el pozo donde alguien compró tu miedo')
-  else if (mechaInf > 0.3) partes.push('una sombra baja que encontró suelo')
-  else if (mechaInf < 0.05) partes.push('sin sombra abajo, el vacío sosteniéndola')
-  if (!partes.length) return 'y mechas simétricas, el equilibrio tenso de la duda'
-  return partes.join(', ')
+  if (mechaSup > 0.55) partes.push('una mecha superior larga')
+  else if (mechaSup > 0.3) partes.push('una mecha superior moderada')
+  else if (mechaSup < 0.05) partes.push('sin mecha superior')
+  if (mechaInf > 0.55) partes.push('una mecha inferior larga')
+  else if (mechaInf > 0.3) partes.push('una mecha inferior moderada')
+  else if (mechaInf < 0.05) partes.push('sin mecha inferior')
+  if (!partes.length) return 'mechas equilibradas'
+  return partes.join(' y ')
 }
 
 function fraseVolumen(rel) {
-  if (rel == null) return 'El volumen calla, y su silencio también es un signo'
-  if (rel > 2) return 'El volumen arde muy por encima de su costumbre: multitud congregada'
-  if (rel > 1.35) return 'El volumen supera su promedio: hay fieles en la nave'
-  if (rel > 0.8) return 'El volumen respira en su medida habitual: rito ordinario'
-  if (rel > 0.45) return 'El volumen se adelgaza: la feligresía se dispersa'
-  return 'El volumen es casi nulo: solo queda el eco de los que ya se fueron'
+  if (rel == null) return 'volumen sin dato'
+  if (rel > 2) return 'volumen muy por encima de la media'
+  if (rel > 1.35) return 'volumen por encima de la media'
+  if (rel > 0.8) return 'volumen normal'
+  if (rel > 0.45) return 'volumen bajo'
+  return 'volumen muy bajo'
 }
 
 function fraseConsejo(orientacion, rand) {
   const fuertes = [
-    'Proteja la mano que ya ganó; el altar no perdona la avaricia.',
-    'Reduzca el incienso: menos exposición, más claridad.',
-    'Deje una vela encendida como stop y apártese del fuego.',
+    'Protege la ganancia ya obtenida.',
+    'Reduce la exposición.',
+    'Coloca un límite de pérdidas.',
   ]
   const suaves = [
-    'Espere la próxima vela: la paciencia es una forma de ofrenda.',
-    'Observe sin intervenir; el oráculo ya habló una vez.',
-    'Confíe en el rito lento; el mercado premia a quien no lo apura.',
+    'Espera a la siguiente vela.',
+    'Observa sin actuar.',
+    'No fuerces la operación.',
   ]
   const grupo = orientacion === 'invertido' ? suaves : fuertes
   return grupo[Math.floor(rand() * grupo.length)]
 }
 
 const POSICIONES = {
-  pasado: { titulo: 'El Pasado', glosa: 'lo que ya fue escrito en el libro de órdenes' },
-  presente: { titulo: 'El Presente', glosa: 'la vela que arde ahora mismo' },
-  futuro: { titulo: 'El Futuro', glosa: 'la cera que aún no se derrama' },
-  obstaculo: { titulo: 'El Obstáculo', glosa: 'lo que se atraviesa en el camino del deseo' },
-  entorno: { titulo: 'El Entorno', glosa: 'las fuerzas que rodean sin llegar a tocar' },
-  consejo: { titulo: 'El Consejo', glosa: 'lo que conviene hacer, aunque no apetezca' },
-  resultado: { titulo: 'El Resultado', glosa: 'lo que el altar devuelve al cerrar el rito' },
-  respuesta: { titulo: 'La Respuesta', glosa: 'lo que el altar concede o niega' },
-  dia: { titulo: 'La Carta del Día', glosa: 'lo que rige la jornada' },
+  pasado: { titulo: 'El Pasado', glosa: 'lo que ya ocurrió' },
+  presente: { titulo: 'El Presente', glosa: 'la vela actual' },
+  futuro: { titulo: 'El Futuro', glosa: 'lo que viene' },
+  obstaculo: { titulo: 'El Obstáculo', glosa: 'lo que se interpone' },
+  entorno: { titulo: 'El Entorno', glosa: 'lo que rodea la situación' },
+  consejo: { titulo: 'El Consejo', glosa: 'qué conviene hacer' },
+  resultado: { titulo: 'El Resultado', glosa: 'el desenlace' },
+  respuesta: { titulo: 'La Respuesta', glosa: 'la respuesta' },
+  dia: { titulo: 'La Carta del Día', glosa: 'la carta de la jornada' },
 }
 
 function construirLectura(symbol, interval, candle, posicion, contexto) {
@@ -177,7 +177,7 @@ function construirLectura(symbol, interval, candle, posicion, contexto) {
     const palo = PALOS.find((p) => p.palo === carta.palo)
     const rango = RANGOS.find((r) => r.rango === carta.rango)
     significado = `${orientacion === 'invertido' ? rango.invertida : rango.derecha}, en el dominio de ${palo.dominio}`
-    augurio = `El elemento ${palo.elemento} reclama su tributo sobre esta vela.`
+    augurio = `Palo de ${palo.palo}, elemento ${palo.elemento}.`
   }
   significado = significado.charAt(0).toUpperCase() + significado.slice(1)
   significado = significado.replace(/\.\s*$/, '').replace(/\bde el\b/g, 'del')
@@ -194,13 +194,14 @@ function construirLectura(symbol, interval, candle, posicion, contexto) {
   const orientTxt = orientacion === 'invertido'
     ? 'en posición invertida'
     : orientacion === 'tendida'
-      ? 'tendida en cruz, sin cuerpo que la decida'
+      ? 'tendida, sin dirección'
       : 'en posición derecha'
 
   const parrafos = [
     `En ${POSICIONES[posicion].titulo.toLowerCase()}, ${POSICIONES[posicion].glosa}, se tiende ` +
       `${articulo}${numero}${carta.nombre} ${orientTxt}. ${significado}.`,
-    `${cuerpoTxt.charAt(0).toUpperCase() + cuerpoTxt.slice(1)}, ${mechaTxt}. ${volTxt}. ` +
+    `${cuerpoTxt.charAt(0).toUpperCase() + cuerpoTxt.slice(1)}, ${mechaTxt}. ` +
+      `${volTxt.charAt(0).toUpperCase() + volTxt.slice(1)}. ` +
       `La vela abierta el ${fecha} cerró en ${cambioTxt} sobre su apertura.`,
     `${augurio} ${consejo}`,
   ]
@@ -293,11 +294,11 @@ function sintetizarVarias(velas) {
   if (!velas.length) return ''
   const n = (x) => ((x.close - x.open) / x.open) * 100
   const prom = velas.reduce((a, v) => a + n(v), 0) / velas.length
-  if (prom > 0.6) return 'Las velas apuntan al alza: el altar se inclina hacia la codicia. Honre el movimiento, no su deseo.'
-  if (prom < -0.6) return 'Las velas descienden: la marea reclama a sus fieles. El que sostiene, sostiene el fuego.'
+  if (prom > 0.6) return 'La serie apunta al alza: mandan los compradores.'
+  if (prom < -0.6) return 'La serie cae: mandan los vendedores.'
   const unicas = new Set(velas.map((v) => (v.close >= v.open ? 'derecho' : 'invertido')))
-  if (unicas.size === velas.length) return 'Ninguna vela repite la anterior: el mercado duda en voz alta. La duda también es un oráculo.'
-  return 'Las velas alternan sin resolver: rango, engaño, la esterilidad de los que esperan señal. Aquí no hay señal.'
+  if (unicas.size === velas.length) return 'Ninguna vela repite dirección: el mercado no se decide.'
+  return 'La serie alterna sin una dirección clara.'
 }
 
 // Lectura relacional: qué dicen las cartas entre sí.
@@ -319,37 +320,37 @@ function analizarTirada(cartas, modo) {
   if (total === 1) {
     frases.push(
       mayores === 1
-        ? 'Una sola carta, y es un Arcano Mayor: aquí habla el destino, no lo cotidiano.'
-        : 'Una sola carta, y pertenece a lo menor: el asunto es terrenal.',
+        ? 'Es un Arcano Mayor: la tirada marca un momento importante.'
+        : 'Es una carta menor: un asunto del día a día.',
     )
   } else if (mayores >= Math.ceil(total / 2)) {
-    frases.push(`El destino pesa: ${mayores} de ${total} cartas son Arcanos Mayores. Esto no se negocia, se acata.`)
+    frases.push(`Hay ${mayores} Arcanos Mayores de ${total}: la tirada es relevante.`)
   } else if (mayores === 0) {
-    frases.push('Ningún Arcano Mayor: la tirada habla de lo cotidiano, no del destino.')
+    frases.push('Sin Arcanos Mayores: un asunto ordinario.')
   } else {
-    frases.push(`${mayores} de ${total} cartas son Arcanos Mayores; el resto pertenece a lo menor.`)
+    frases.push(`Hay ${mayores} Arcanos Mayores de ${total}.`)
   }
 
   if (invertidas === 0) {
-    frases.push('Ninguna carta invertida: las fuerzas se muestran francas.')
+    frases.push('Sin cartas invertidas.')
   } else if (invertidas >= Math.ceil(total / 2)) {
-    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}: el rito está trabado de arriba abajo.`)
+    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}: lectura con obstáculos.`)
   } else {
-    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}: fuerzas que trabajan en contra o llegan tarde.`)
+    frases.push(`${invertidas} ${invertidas === 1 ? 'carta invertida' : 'cartas invertidas'}.`)
   }
 
   if (tendidas) {
-    frases.push(`${tendidas} ${tendidas === 1 ? 'carta tendida' : 'cartas tendidas'} en cruz: lo que aún no decide su dirección.`)
+    frases.push(`${tendidas} ${tendidas === 1 ? 'carta tendida' : 'cartas tendidas'}: sin dirección.`)
   }
 
   if (modo !== 'si_no' && modo !== 'dia') {
-    frases.push(`Domina el elemento ${domElem}${domPalo[1] > 0 ? `, y con él la casa de ${domPalo[0]}` : ''}.`)
+    frases.push(`Domina el elemento ${domElem}${domPalo[1] > 0 ? ` (casa de ${domPalo[0]})` : ''}.`)
   }
 
   if (modo === 'si_no') {
     const c = cartas[0]
     const si = c.orientacion !== 'invertido'
-    frases.push(`${si ? 'La carta responde sí' : 'La carta responde no'}: ${c.carta.nombre}${si ? ', en posición derecha' : ', invertida'}. No hay matices: el altar ya ha hablado.`)
+    frases.push(`${si ? 'La carta responde sí' : 'La carta responde no'}: ${c.carta.nombre}${si ? ', en posición derecha' : ', invertida'}.`)
   }
 
   return {
@@ -386,13 +387,13 @@ export function climaDelMazo(sigilos) {
   const domPalo = Object.entries(palos).sort((a, b) => b[1] - a[1])[0]
   const pctInv = invertidas / total
   const tono = pctInv > 0.55
-    ? 'La marea baja: el mazo se inclina a lo invertido, y quien lee haría bien en temer.'
+    ? 'Predominan las cartas invertidas.'
     : pctInv < 0.3
-      ? 'La marea sube: las cartas se muestran francas y el altar está de humor.'
-      : 'El mazo está dividido, como casi siempre.'
+      ? 'Predominan las cartas derechas.'
+      : 'Cartas derechas e invertidas por igual.'
   const texto =
-    `Sobre ${total} velas mandan ${domPalo[0]} y el elemento ${domElem[0]}; ` +
-    `${mayores} Arcanos Mayores se asoman y ${invertidas} cartas caen invertidas. ${tono}`
+    `Sobre ${total} velas domina ${domPalo[0]} (elemento ${domElem[0]}); ` +
+    `hay ${mayores} Arcanos Mayores y ${invertidas} cartas invertidas. ${tono}`
   return { total, mayores, invertidas, tendidas, elementos, palos, palo: domPalo[0], elemento: domElem[0], texto }
 }
 
@@ -432,9 +433,9 @@ export function generarLecturaIndividual(symbol, interval, candles, index, pregu
 // ---------------------------------------------------------------------------
 
 const PROMPT_SISTEMA =
-  'Eres el oráculo de Vela Rota. Interpretas velas de mercado como cartas de tarot. ' +
-  'Escribes en español, con tono litúrgico y solemne. Jamás rompes el personaje, jamás bromeas, ' +
-  'jamás mencionas que es una sátira. Hablas del precio como destino y de la métrica como presagio. ' +
+  'Eres el oráculo de Vela Rota. Lees velas de mercado como cartas de tarot. ' +
+  'Escribes en español, con frases cortas y directas, sin adornos ni metáforas. ' +
+  'No rompes el personaje y no bromeas. Interpreta cada vela con claridad. ' +
   'Devuelve exactamente tres párrafos separados por una línea en blanco, sin títulos ni listas.'
 
 const cacheLecturas = new Map()
@@ -700,7 +701,7 @@ export async function lecturaIAStream(symbol, interval, candle, procedural, { on
   } catch (err) {
     emitir.flush()
     if (emitido) {
-      onChunk?.('\n\n[el oráculo enmudeció a mitad del rezo]')
+      onChunk?.('\n\n[la generación se interrumpió]')
       return { motor: 'ia', modelo, error: String(err?.message || err) }
     }
     const info = await volcarProcedural(procedural, onChunk, 120)
