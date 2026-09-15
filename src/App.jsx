@@ -570,6 +570,8 @@ export default function App() {
           key={`${simbolo}|${intervalo}|${genero}|${capitulos}`}
           simbolo={simbolo}
           intervalo={intervalo}
+          onSimbolo={setSimbolo}
+          onIntervalo={setIntervalo}
           seleccion={seleccion}
           onSeleccion={setSeleccion}
           genero={genero}

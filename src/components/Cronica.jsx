@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { analizarCronica, streamCronica } from '../api.js'
 import { descargarPergamino, generarPergamino } from '../compartir.js'
 
@@ -15,13 +15,88 @@ const GLIFO = {
   rescate: '⤒',
 }
 
-function claveGuardado(simbolo, intervalo, genero, premisa) {
-  return `vela-rota:cronica:${simbolo}|${intervalo}|${genero}|${premisa}`
+const CLAVE_ARCHIVO = 'vela-rota:cronicas'
+
+function idSaga(simbolo, intervalo, genero, premisa) {
+  return `${simbolo}|${intervalo}|${genero}|${premisa || ''}`
+}
+
+function leerArchivo() {
+  try {
+    const crudo = localStorage.getItem(CLAVE_ARCHIVO)
+    const lista = crudo ? JSON.parse(crudo) : []
+    return Array.isArray(lista) ? lista : []
+  } catch {
+    return []
+  }
+}
+
+function escribirArchivo(lista) {
+  try {
+    localStorage.setItem(CLAVE_ARCHIVO, JSON.stringify(lista.slice(0, 24)))
+  } catch {
+    /* sin almacenamiento */
+  }
+}
+
+function fechaCorta(ms) {
+  if (!ms) return ''
+  try {
+    return new Date(ms).toISOString().slice(0, 10)
+  } catch {
+    return ''
+  }
+}
+
+function armarEntrada(datos) {
+  return {
+    id: idSaga(datos.simbolo, datos.intervalo, datos.genero, datos.premisa),
+    simbolo: datos.simbolo,
+    intervalo: datos.intervalo,
+    genero: datos.genero,
+    premisa: datos.premisa || '',
+    protagonista: datos.protagonista || null,
+    trama: datos.trama || null,
+    capitulos: datos.capitulos,
+    resumen: datos.resumen,
+    motor: datos.motor || null,
+    auto: Boolean(datos.auto),
+    actualizada: Date.now(),
+  }
+}
+
+function migrarSagaLegado(id, lista) {
+  try {
+    const crudo = localStorage.getItem(`vela-rota:cronica:${id}`)
+    if (!crudo) return null
+    const guardado = JSON.parse(crudo)
+    if (!Array.isArray(guardado.capitulos) || !guardado.capitulos.length) return null
+    const [sim, int, gen, ...resto] = id.split('|')
+    const entrada = armarEntrada({
+      simbolo: sim,
+      intervalo: int,
+      genero: gen,
+      premisa: resto.join('|'),
+      protagonista: guardado.protagonista,
+      trama: guardado.trama,
+      capitulos: guardado.capitulos,
+      resumen: guardado.resumen || '',
+      motor: guardado.motor,
+      auto: false,
+    })
+    escribirArchivo([entrada, ...lista])
+    localStorage.removeItem(`vela-rota:cronica:${id}`)
+    return entrada
+  } catch {
+    return null
+  }
 }
 
 export default function Cronica({
   simbolo,
   intervalo,
+  onSimbolo,
+  onIntervalo,
   seleccion,
   onSeleccion,
   genero,
@@ -37,6 +112,8 @@ export default function Cronica({
   const [resumenRodante, setResumenRodante] = useState('')
   const [fase, setFase] = useState('inactivo')
   const [motor, setMotor] = useState(null)
+  const [auto, setAuto] = useState(false)
+  const [archivo, setArchivo] = useState(leerArchivo)
   const [error, setError] = useState(null)
   const [vozOn, setVozOn] = useState(false)
   const [hablante, setHablante] = useState(-1)
@@ -46,6 +123,9 @@ export default function Cronica({
   const capsRef = useRef([])
   const premisaRef = useRef(premisa)
   const vozRef = useRef(vozOn)
+  const autoRef = useRef(auto)
+  const tejerRef = useRef(null)
+  const autoLockRef = useRef('')
   const nodosRef = useRef({})
 
   useEffect(() => {
@@ -55,52 +135,64 @@ export default function Cronica({
     vozRef.current = vozOn
   }, [vozOn])
   useEffect(() => {
+    autoRef.current = auto
+  }, [auto])
+  useEffect(() => {
     capsRef.current = relato
   }, [relato])
   useEffect(() => () => window.speechSynthesis?.cancel(), [])
 
+  const idActual = idSaga(simbolo, intervalo, genero, premisa)
+
+  const cargarEntrada = useCallback((entrada) => {
+    setRelato(entrada.capitulos || [])
+    setResumenRodante(entrada.resumen || '')
+    setMotor(entrada.motor || null)
+    setAuto(Boolean(entrada.auto))
+    setFase('listo')
+  }, [])
+
+  // Carga inicial: análisis del precio + saga guardada
   useEffect(() => {
     let vivo = true
     analizarCronica({ symbol: simbolo, interval: intervalo, capitulos, genero })
       .then((d) => {
         if (!vivo) return
         setDatos(d)
-        try {
-          const crudo = localStorage.getItem(claveGuardado(simbolo, intervalo, genero, premisaRef.current))
-          if (crudo) {
-            const guardado = JSON.parse(crudo)
-            if (Array.isArray(guardado.capitulos) && guardado.capitulos.length) {
-              setRelato(guardado.capitulos)
-              setResumenRodante(guardado.resumen || '')
-              setMotor(guardado.motor || null)
-              setFase('listo')
-            }
-          }
-        } catch {
-          /* saga corrupta: se ignora */
+        const id = idSaga(simbolo, intervalo, genero, premisaRef.current)
+        const lista = leerArchivo()
+        let entrada = lista.find((e) => e.id === id)
+        if (!entrada) {
+          entrada = migrarSagaLegado(id, lista)
         }
+        setArchivo(entrada && !lista.includes(entrada) ? [entrada, ...lista] : lista)
+        if (entrada?.capitulos?.length) cargarEntrada(entrada)
       })
       .catch((e) => vivo && setError(e.message))
     return () => {
       vivo = false
     }
-  }, [simbolo, intervalo, genero, capitulos])
+  }, [simbolo, intervalo, genero, capitulos, cargarEntrada])
 
-  function guardar(caps, resumen, info) {
-    try {
-      localStorage.setItem(
-        claveGuardado(simbolo, intervalo, genero, premisaRef.current),
-        JSON.stringify({
-          capitulos: caps,
-          resumen,
-          motor: info || motor,
-          protagonista: datos?.protagonista,
-          trama: datos?.trama,
-        }),
-      )
-    } catch {
-      /* sin almacenamiento */
-    }
+  function guardarEnArchivo(caps, resumen, info, marcaAuto) {
+    const entrada = armarEntrada({
+      simbolo,
+      intervalo,
+      genero,
+      premisa: premisaRef.current,
+      protagonista: datos?.protagonista,
+      trama: datos?.trama,
+      capitulos: caps,
+      resumen,
+      motor: info || motor,
+      auto: marcaAuto,
+    })
+    setArchivo((prev) => {
+      const otros = prev.filter((e) => e.id !== entrada.id)
+      const nueva = [entrada, ...otros]
+      escribirArchivo(nueva)
+      return nueva
+    })
   }
 
   function ultimoOpenTime() {
@@ -149,7 +241,7 @@ export default function Cronica({
           setRelato((prev) => {
             const resumen = prev.map((c) => c.texto).join(' ').slice(-1000)
             setResumenRodante(resumen)
-            guardar(prev, resumen, fin)
+            guardarEnArchivo(prev, resumen, fin, autoRef.current)
             if (vozRef.current) narrar(prev)
             return prev
           })
@@ -163,6 +255,23 @@ export default function Cronica({
     })
   }
 
+  useEffect(() => {
+    tejerRef.current = tejer
+  })
+
+  // Auto-continuar: teje lo que falte sin intervención
+  useEffect(() => {
+    if (!auto || fase === 'tejiendo' || !datos?.beats?.length) return undefined
+    const ultimo = relato.length ? relato[relato.length - 1].openTime : 0
+    const hayAlgo = relato.length ? datos.beats.some((b) => b.openTime > ultimo) : datos.beats.length > 0
+    if (!hayAlgo) return undefined
+    const firma = `${relato.length}|${ultimo}`
+    if (autoLockRef.current === firma) return undefined
+    autoLockRef.current = firma
+    const t = setTimeout(() => tejerRef.current?.(relato.length > 0), 60)
+    return () => clearTimeout(t)
+  }, [auto, datos, relato, fase])
+
   function nueva() {
     abortRef.current?.abort()
     detener()
@@ -170,11 +279,51 @@ export default function Cronica({
     setResumenRodante('')
     setMotor(null)
     setFase('inactivo')
-    try {
-      localStorage.removeItem(claveGuardado(simbolo, intervalo, genero, premisaRef.current))
-    } catch {
-      /* sin almacenamiento */
+    setArchivo((prev) => {
+      const nuevaLista = prev.filter((e) => e.id !== idActual)
+      escribirArchivo(nuevaLista)
+      return nuevaLista
+    })
+  }
+
+  function abrirSaga(entrada) {
+    detener()
+    const misma =
+      entrada.simbolo === simbolo &&
+      entrada.intervalo === intervalo &&
+      entrada.genero === genero &&
+      (entrada.premisa || '') === premisa
+    if (misma) {
+      cargarEntrada(entrada)
+      return
     }
+    abortRef.current?.abort()
+    onSimbolo?.(entrada.simbolo)
+    onIntervalo?.(entrada.intervalo)
+    onGenero?.(entrada.genero)
+    onPremisa?.(entrada.premisa || '')
+  }
+
+  function eliminarSaga(entrada) {
+    setArchivo((prev) => {
+      const nuevaLista = prev.filter((e) => e.id !== entrada.id)
+      escribirArchivo(nuevaLista)
+      return nuevaLista
+    })
+    if (entrada.id === idActual) {
+      setRelato([])
+      setResumenRodante('')
+      setMotor(null)
+      setFase('inactivo')
+    }
+  }
+
+  function alternarAuto() {
+    const siguiente = !auto
+    setAuto(siguiente)
+    autoRef.current = siguiente
+    const caps = capsRef.current
+    if (caps.length) guardarEnArchivo(caps, resumenRodante, motor, siguiente)
   }
 
   function narrar(caps) {
@@ -223,7 +372,7 @@ export default function Cronica({
         carta: { nombre: `${datos?.protagonista || 'La Crónica'} — ${genero}` },
         orientacion: '',
         pregunta: premisa,
-        texto: relato.map((c) => `${c.acto} · ${c.titulo}\n${c.texto}`).join('\n\n'),
+        texto: relato.map((c) => `${c.acto} · ${c.titulo} (${fechaCorta(c.openTime)})\n${c.texto}`).join('\n\n'),
       },
       { symbol: simbolo, interval: intervalo },
     )
@@ -253,9 +402,14 @@ export default function Cronica({
       <aside className="oraculo cronica-panel">
         <div className="oraculo-cabecera">
           <h2 className="seccion-titulo">La Crónica</h2>
-          <button type="button" className={`vivo ${vozOn ? 'vivo-on' : ''}`} onClick={alternarVoz}>
-            {vozOn ? '♪ voz' : '♪ voz off'}
-          </button>
+          <div className="cronica-acciones-cabecera">
+            <button type="button" className={`vivo ${auto ? 'vivo-on' : ''}`} onClick={alternarAuto}>
+              {auto ? '⟳ auto' : '⟳ auto off'}
+            </button>
+            <button type="button" className={`vivo ${vozOn ? 'vivo-on' : ''}`} onClick={alternarVoz}>
+              {vozOn ? '♪ voz' : '♪ voz off'}
+            </button>
+          </div>
         </div>
         <p className="seccion-glosa">el precio dicta el ánimo; el ánimo teje la historia</p>
         {datos?.trama ? <p className="cronica-trama">{datos.trama}</p> : null}
@@ -304,7 +458,13 @@ export default function Cronica({
         </div>
         {relato.length ? (
           <p className={`cronica-pista ${hayNuevos ? 'hay-nuevos' : ''}`}>
-            {hayNuevos ? 'hay velas nuevas: puedes continuar la saga' : 'la saga está al día con el mercado'}
+            {auto
+              ? hayNuevos
+                ? 'auto: tejiendo lo nuevo del mercado…'
+                : 'auto: la saga se teje sola con cada vela nueva'
+              : hayNuevos
+                ? 'hay velas nuevas: puedes continuar la saga'
+                : 'la saga está al día con el mercado'}
           </p>
         ) : null}
 
@@ -325,6 +485,31 @@ export default function Cronica({
           </div>
         ) : null}
 
+        {archivo.length ? (
+          <div className="archivo">
+            <div className="diario-cabecera">
+              <h3 className="seccion-titulo">Archivo</h3>
+              <span className="archivo-cuenta">{archivo.length}</span>
+            </div>
+            <ul>
+              {archivo.slice(0, 8).map((e) => (
+                <li key={e.id} className={e.id === idActual ? 'archivo-actual' : ''}>
+                  <button type="button" onClick={() => abrirSaga(e)}>
+                    <span>{e.protagonista || `${e.simbolo} ${e.intervalo}`}</span>
+                    <i>
+                      {e.simbolo} · {e.intervalo} · {e.genero} · {(e.capitulos || []).length} actos
+                      {e.auto ? ' · auto' : ''} · {fechaCorta(e.actualizada)}
+                    </i>
+                  </button>
+                  <button type="button" className="archivo-borrar" onClick={() => eliminarSaga(e)} aria-label="Borrar saga">
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         {error ? <p className="cronica-error">{error}</p> : null}
       </aside>
 
@@ -340,7 +525,11 @@ export default function Cronica({
             </div>
             <h2 className="seccion-titulo">
               {datos?.protagonista || 'La Crónica'}
-              <span className="lectura-fecha">{relato.length} actos · {genero}</span>
+              <span className="lectura-fecha">
+                {relato.length} actos · {genero}
+                {relato[0]?.openTime ? ` · desde ${fechaCorta(relato[0].openTime)}` : ''}
+                {relato.length > 1 ? ` hasta ${fechaCorta(relato[relato.length - 1].openTime)}` : ''}
+              </span>
             </h2>
             {relato.map((c, i) => (
               <article
@@ -349,7 +538,9 @@ export default function Cronica({
                 className={`cronica-acto mood-${c.mood} ${hablante === i ? 'esta-hablando' : ''}`}
               >
                 <h3 className="cronica-acto-titulo">{c.acto} — {c.titulo}</h3>
-                <span className="cronica-acto-tono">{c.funcion} · {c.tono} · {c.cambioTxt}</span>
+                <span className="cronica-acto-tono">
+                  {fechaCorta(c.openTime)} · {c.funcion} · {c.tono} · {c.cambioTxt}
+                </span>
                 <p className="cronica-acto-texto">
                   {c.texto}
                   {tejiendo && i === relato.length - 1 ? <span className="cursor">▌</span> : null}

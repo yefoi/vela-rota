@@ -1159,6 +1159,87 @@ body {
   background: rgba(217, 180, 91, 0.04);
 }
 
+.cronica-acciones-cabecera { display: flex; gap: 6px; }
+.cronica-acciones-cabecera .vivo { margin-left: 0; }
+
+.archivo {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--oro-tenue);
+}
+
+.archivo-cuenta {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--tinta-suave);
+}
+
+.archivo ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archivo li { display: flex; align-items: stretch; gap: 4px; }
+
+.archivo li > button:first-child {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--oro-tenue);
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.archivo li > button:first-child:hover {
+  border-left-color: var(--oro);
+  background: rgba(217, 180, 91, 0.06);
+}
+
+.archivo-actual > button:first-child {
+  border-left-color: var(--oro);
+  background: rgba(217, 180, 91, 0.09);
+}
+
+.archivo li span {
+  font-family: var(--titulo);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta);
+}
+
+.archivo li i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.archivo-borrar {
+  background: transparent;
+  border: 0;
+  color: var(--tinta-suave);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.archivo-borrar:hover { color: var(--sangre); }
+
 .pregunta button:disabled { opacity: 0.5; cursor: default; }
 
 .actos {

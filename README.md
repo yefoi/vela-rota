@@ -78,7 +78,10 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
   continuando lo ya escrito. Incluye selector de **género** (épico, noir, horror
   cósmico, western, cyberpunk, tragedia), **estado de la saga** persistente
   (riqueza, heridas, deuda, aliados, objetos), **continuar** la saga con velas
-  nuevas, **timeline** de ánimos y **narración por voz** (TTS).
+  nuevas, **timeline** de ánimos y **narración por voz** (TTS). Incluye
+  **archivo de sagas** (abrir/borrar) y **auto-continuar**: con `1w` la saga suma
+  un acto por vela nueva sin intervención. Cada acto muestra su fecha, y la
+  cabecera el rango narrado.
 - **Lectura en streaming**: el oráculo escribe token a token vía SSE.
 - **En vivo**: refresco periódico del altar (pausable).
 - **Volatilidad**: el ruido, el glitch y la cera reaccionan al rango real;
