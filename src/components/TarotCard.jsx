@@ -1,10 +1,13 @@
+import Arcano from './Arcano.jsx'
+
 const GLIFO_PALO = { Bastos: '🜂', Copas: '🜄', Espadas: '🜁', Oros: '🜃' }
 
 export default function TarotCard({ carta, posicion, active, onClick, compact }) {
   if (!carta) return null
   const invertida = carta.orientacion === 'invertido'
   const tendida = carta.orientacion === 'tendida'
-  const glifo = carta.tipo === 'mayor' ? '✦' : GLIFO_PALO[carta.palo] || '✦'
+  const glifo = GLIFO_PALO[carta.palo] || '✦'
+  const esMayor = carta.tipo === 'mayor'
   const encabezado = carta.roman || carta.rango
 
   return (
@@ -24,14 +27,16 @@ export default function TarotCard({ carta, posicion, active, onClick, compact })
       {posicion ? <span className="tarot-posicion">{posicion}</span> : null}
       <span className="tarot-cuerpo">
         <span className="tarot-encabezado">{encabezado}</span>
-        <span className="tarot-glifo" aria-hidden="true">{glifo}</span>
+        <span className="tarot-glifo" aria-hidden="true">
+          {esMayor ? <Arcano nombre={carta.nombre} /> : glifo}
+        </span>
         <span className="tarot-nombre">{carta.nombre}</span>
         <span className="tarot-elemento">{carta.elemento}</span>
       </span>
       <span className="tarot-orientacion">
         {invertida ? 'invertida' : tendida ? 'tendida' : 'derecha'}
       </span>
-      <span className="tarot-glitch" aria-hidden="true">{glifo}</span>
+      <span className="tarot-glitch" aria-hidden="true">{esMayor ? '✦' : glifo}</span>
     </button>
   )
 }
