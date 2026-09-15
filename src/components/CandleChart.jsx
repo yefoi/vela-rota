@@ -4,7 +4,7 @@ const ORO = '#d9b45b'
 const CERA = '#e7d2a0'
 const SANGRE = '#a32538'
 
-export default function CandleChart({ velas, sigilos, selectedIndex, onSelect, mostrarSigilos }) {
+export default function CandleChart({ velas, sigilos, selectedIndex, onSelect, mostrarSenales }) {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const [hover, setHover] = useState(null)
@@ -29,8 +29,8 @@ export default function CandleChart({ velas, sigilos, selectedIndex, onSelect, m
     canvas.height = size.h * dpr
     const ctx = canvas.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    dibujar(ctx, size.w, size.h, velas, sigilos, selectedIndex, hover, mostrarSigilos)
-  }, [velas, sigilos, selectedIndex, hover, size, mostrarSigilos])
+    dibujar(ctx, size.w, size.h, velas, sigilos, selectedIndex, hover, mostrarSenales)
+  }, [velas, sigilos, selectedIndex, hover, size, mostrarSenales])
 
   function indiceDesdeX(clientX) {
     const rect = canvasRef.current.getBoundingClientRect()
@@ -62,7 +62,7 @@ export default function CandleChart({ velas, sigilos, selectedIndex, onSelect, m
   )
 }
 
-function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover, mostrarSigilos) {
+function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover, mostrarSenales) {
   ctx.clearRect(0, 0, w, h)
   const pad = { top: 26, right: 64, bottom: 24, left: 12 }
   const plotW = w - pad.left - pad.right
@@ -149,18 +149,23 @@ function dibujar(ctx, w, h, velas, sigilos, selectedIndex, hover, mostrarSigilos
     }
   })
 
-  if (mostrarSigilos) {
-    ctx.textAlign = 'center'
+  // Capa de señal: solo Arcanos Mayores (dorado; rosado si van invertidos)
+  if (mostrarSenales) {
     velas.forEach((v, i) => {
       if (i === selectedIndex || i === hover) return
       const sig = sigilos?.[i]?.sigilo
-      if (!sig) return
+      if (!sig || sig.tipo !== 'mayor') return
       const cx = pad.left + paso * (i + 0.5)
-      ctx.fillStyle = 'rgba(217, 180, 91, 0.5)'
-      ctx.font = '10px "Cinzel", serif'
-      ctx.fillText(sig.roman || glifoPalo(sig.palo), cx, pad.top - 10)
+      const cy = pad.top - 11
+      ctx.fillStyle = sig.orientacion === 'invertido' ? 'rgba(217, 106, 130, 0.95)' : 'rgba(217, 180, 91, 0.95)'
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 3.4)
+      ctx.lineTo(cx + 3.4, cy)
+      ctx.lineTo(cx, cy + 3.4)
+      ctx.lineTo(cx - 3.4, cy)
+      ctx.closePath()
+      ctx.fill()
     })
-    ctx.textAlign = 'left'
   }
 
   // lectura emergente de la vela señalada

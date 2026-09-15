@@ -359,6 +359,7 @@ body {
 .punto-alza { background: var(--cera); }
 .punto-baja { background: var(--sangre); }
 .punto-cruz { background: transparent; border: 1px solid var(--oro); }
+.punto-mayor { background: var(--oro); box-shadow: 0 0 8px rgba(217, 180, 91, 0.6); }
 .glifo-pista { margin-left: auto; color: rgba(154, 140, 114, 0.55); }
 
 /* ----------------------------------------------------------------- oráculo */

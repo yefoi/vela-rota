@@ -91,7 +91,7 @@ export default function App() {
   const [escribiendo, setEscribiendo] = useState(false)
   const [error, setError] = useState(null)
   const [enVivo, setEnVivo] = useState(true)
-  const [sigilosOn, setSigilosOn] = useState(false)
+  const [senalesOn, setSenalesOn] = useState(false)
   const [vozOn, setVozOn] = useState(false)
   const [hablando, setHablando] = useState(false)
   const [diario, setDiario] = useState(cargarDiario)
@@ -406,8 +406,8 @@ export default function App() {
           <button type="button" className={`vivo ${enVivo ? 'vivo-on' : ''}`} onClick={() => setEnVivo((v) => !v)}>
             {enVivo ? '● en vivo' : '○ pausado'}
           </button>
-          <button type="button" className={`vivo ${sigilosOn ? 'vivo-on' : ''}`} onClick={() => setSigilosOn((v) => !v)}>
-            {sigilosOn ? '✦ sigilos' : '✧ sigilos'}
+          <button type="button" className={`vivo ${senalesOn ? 'vivo-on' : ''}`} onClick={() => setSenalesOn((v) => !v)}>
+            {senalesOn ? '◆ mayores' : '◇ mayores'}
           </button>
         </div>
 
@@ -416,13 +416,14 @@ export default function App() {
           sigilos={data?.sigilos}
           selectedIndex={seleccion}
           onSelect={consagrar}
-          mostrarSigilos={sigilosOn}
+          mostrarSenales={senalesOn}
         />
 
         <div className="leyenda">
           <span><i className="punto punto-alza" /> alza = carta derecha</span>
           <span><i className="punto punto-baja" /> baja = carta invertida</span>
           <span><i className="punto punto-cruz" /> doji = tendida en cruz</span>
+          <span><i className="punto punto-mayor" /> ◆ arcano mayor (rosado si invertido)</span>
           <span className="glifo-pista">recorre el gráfico y pulsa una vela para consagrarla</span>
         </div>
       </section>
