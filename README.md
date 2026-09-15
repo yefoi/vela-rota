@@ -1,6 +1,6 @@
 # WICKFABLE
 
-> mercados como oráculo · cada vela es una carta tendida en el altar
+> velas de mercado reales leídas como cartas de tarot y crónicas de ficción
 
 Toma velas reales de mercado (cripto, vía Binance) y las lee como cartas de tarot.
 Cada candlestick se convierte en un arcano: alcista = carta derecha, bajista =
@@ -11,7 +11,7 @@ glitch, ruido, sombras.
 ## Cómo funciona
 
 1. El servidor pide velas reales a la API pública de Binance (`/api/v3/klines`).
-   Si el mundo calla, fabrica velas sintéticas para no dejar el altar vacío.
+   Si ninguna fuente responde, genera velas sintéticas.
 2. Un oráculo **determinista** convierte cada vela en una carta (siempre la misma
    vela revela la misma carta) y redacta la lectura a partir de su cuerpo,
    mechas, volumen y variación.

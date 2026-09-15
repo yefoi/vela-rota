@@ -411,7 +411,6 @@ export default function Cronica({
             </button>
           </div>
         </div>
-        <p className="seccion-glosa">el precio dicta el ánimo; el ánimo teje la historia</p>
         {datos?.trama ? <p className="cronica-trama">{datos.trama}</p> : null}
 
         <div className="cronica-controles">
@@ -460,8 +459,8 @@ export default function Cronica({
           <p className={`cronica-pista ${hayNuevos ? 'hay-nuevos' : ''}`}>
             {auto
               ? hayNuevos
-                ? 'auto: tejiendo lo nuevo del mercado…'
-                : 'auto: la saga se teje sola con cada vela nueva'
+                ? 'auto: añadiendo lo nuevo del mercado…'
+                : 'auto: la saga crece con cada vela nueva'
               : hayNuevos
                 ? 'hay velas nuevas: puedes continuar la saga'
                 : 'la saga está al día con el mercado'}

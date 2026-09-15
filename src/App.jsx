@@ -60,7 +60,7 @@ const ETIQUETA_FUENTE = {
   binance: 'velas reales · binance',
   'binance-us': 'velas reales · binance us',
   coinbase: 'velas reales · coinbase',
-  sintetico: 'velas sintéticas · el mundo calló',
+  sintetico: 'velas sintéticas · sin conexión',
 }
 
 const ETIQUETA_INTERVALO = {
@@ -365,7 +365,7 @@ export default function App() {
         <div className="titulo-bloque">
           <h1 className="titulo" data-texto="WICKFABLE">WICKFABLE</h1>
           <p className="lema">
-            los mercados como oráculo · cada vela es una carta tendida en el altar
+            velas de mercado reales leídas como cartas de tarot y crónicas de ficción
           </p>
         </div>
 
@@ -589,8 +589,7 @@ export default function App() {
 
       <footer className="pie">
         <span>WICKFABLE</span>
-        <span>el precio no predice: revela</span>
-        <span>obra de ficción · no es asesoría financiera · es liturgia</span>
+        <span>obra de ficción · no es asesoría financiera</span>
       </footer>
 
       {aviso ? <div className="aviso">{aviso}</div> : null}

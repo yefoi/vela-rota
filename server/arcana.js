@@ -1,5 +1,5 @@
-// Arcana — corpus litúrgico de Wickfable.
-// El mercado no predice: revela. Cada vela es una carta tendida en el altar.
+// Arcana — corpus de cartas de Wickfable.
+// Cada vela se mapea de forma determinista a una carta.
 
 export const ARCANOS_MAYORES = [
   {
@@ -201,9 +201,8 @@ export const LITURGIA = {
     'Cada vela se lee como una carta.',
   ],
   cierre: [
-    'La lectura termina aquí.',
-    'La carta describe, no aconseja.',
-    'No es una recomendación de inversión.',
+    'Fin de la lectura.',
+    'La lectura es ficción, no asesoría financiera.',
   ],
 }
 

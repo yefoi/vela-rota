@@ -86,7 +86,6 @@ export async function generarPergamino(lectura, meta = {}) {
   ctx.textAlign = 'center'
   ctx.fillStyle = COLOR.suave
   ctx.font = '14px "Share Tech Mono", monospace'
-  ctx.fillText('el precio no predice: revela', W / 2, H - 84)
   ctx.fillText('ficción · no es asesoría financiera', W / 2, H - 64)
 
   return canvas
@@ -211,7 +210,6 @@ export async function generarPergaminoTirada(tirada, meta = {}) {
   ctx.textAlign = 'center'
   ctx.fillStyle = COLOR.suave
   ctx.font = '14px "Share Tech Mono", monospace'
-  ctx.fillText('el precio no predice: revela', W / 2, H - 84)
   ctx.fillText('ficción · no es asesoría financiera', W / 2, H - 64)
 
   return canvas
