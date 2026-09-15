@@ -63,6 +63,16 @@ const ETIQUETA_FUENTE = {
   sintetico: 'velas sintéticas · el mundo calló',
 }
 
+const ETIQUETA_INTERVALO = {
+  '5m': '5 min',
+  '15m': '15 min',
+  '1h': '1 hora',
+  '4h': '4 horas',
+  '1d': '1 día',
+  '1w': '1 semana',
+  '1M': '1 mes',
+}
+
 export default function App() {
   const [config, setConfig] = useState(null)
   const [vista, setVista] = useState(RESTAURO.vista)
@@ -376,7 +386,7 @@ export default function App() {
             <span>tiempo</span>
             <select value={intervalo} onChange={(e) => { setIntervalo(e.target.value); setCargando(true); setError(null) }}>
               {(config?.intervalos || ['1h']).map((i) => (
-                <option key={i} value={i}>{i}</option>
+                <option key={i} value={i}>{ETIQUETA_INTERVALO[i] || i}</option>
               ))}
             </select>
           </label>
@@ -386,7 +396,7 @@ export default function App() {
 
       <section className="mesa">
         <div className="mesa-barra">
-          <span className="par">{simbolo}<i>·</i>{intervalo}</span>
+          <span className="par">{simbolo}<i>·</i>{ETIQUETA_INTERVALO[intervalo] || intervalo}</span>
           {data ? (
             <span className={`fuente ${fuente === 'sintetico' ? 'fuente-falsa' : 'fuente-real'}`}>
               {ETIQUETA_FUENTE[fuente] || fuente}

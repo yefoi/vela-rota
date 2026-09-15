@@ -9,7 +9,7 @@ const BINANCE_GLOBAL = [
 const BINANCE_US = 'https://api.binance.us'
 
 export const SIMBOLOS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT']
-export const INTERVALOS = ['5m', '15m', '1h', '4h', '1d']
+export const INTERVALOS = ['5m', '15m', '1h', '4h', '1d', '1w', '1M']
 
 const cache = new Map()
 const TTL = 20_000
@@ -36,8 +36,9 @@ async function klines(host, symbol, interval, limit) {
   return datos.map(desdeBinance)
 }
 
-// Coinbase sólo acepta ciertas granularidades; 4h se arma agregando 1h.
-const COINBASE_GRAN = { '5m': 300, '15m': 900, '1h': 3600, '1d': 86400 }
+// Coinbase sólo acepta ciertas granularidades; 4h, 1w y 1M se arman agregando.
+const COINBASE_GRAN = { '5m': 300, '15m': 900, '1h': 3600, '4h': 3600, '1d': 86400, '1w': 86400, '1M': 86400 }
+const COINBASE_FACTOR = { '5m': 1, '15m': 1, '1h': 1, '4h': 4, '1d': 1, '1w': 7, '1M': 30 }
 
 function agrupar(velas, factor) {
   const salida = []
@@ -60,12 +61,8 @@ function agrupar(velas, factor) {
 
 async function desdeCoinbase(symbol, interval, limit) {
   const par = symbol.replace(/USDT$/, '-USD')
-  let gran = COINBASE_GRAN[interval]
-  let factor = 1
-  if (!gran) {
-    gran = 3600
-    factor = interval === '4h' ? 4 : 1
-  }
+  const gran = COINBASE_GRAN[interval] || 86400
+  const factor = COINBASE_FACTOR[interval] || 1
   const url = `https://api.exchange.coinbase.com/products/${par}/candles?granularity=${gran}`
   const res = await fetch(url, {
     headers: { 'User-Agent': 'vela-rota/0.1' },
@@ -100,7 +97,7 @@ function sinteticas(symbol, interval, limit) {
     semilla = (semilla * 1664525 + 1013904223) >>> 0
     return semilla / 4294967296
   }
-  const paso = { '5m': 5 * 60e3, '15m': 15 * 60e3, '1h': 3600e3, '4h': 4 * 3600e3, '1d': 86400e3 }[interval] || 3600e3
+  const paso = { '5m': 5 * 60e3, '15m': 15 * 60e3, '1h': 3600e3, '4h': 4 * 3600e3, '1d': 86400e3, '1w': 7 * 86400e3, '1M': 30 * 86400e3 }[interval] || 3600e3
   const ahora = Date.now()
   const velas = []
   for (let i = limit - 1; i >= 0; i--) {
