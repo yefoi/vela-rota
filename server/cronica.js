@@ -192,10 +192,31 @@ function protagonista(symbol, genero) {
     lovecraft: `el testigo de ${base}`,
     western: `${base}, forajido de frontera`,
     cyberpunk: `${base}, corredor del Sector Bajo`,
-    tragedia: `${base}, hijo de la hybris`,
-    epico: `el vigía de ${base}`,
+    tragedia: `${base}, héroe trágico`,
+    epico: `el caballero de ${base}`,
   }
-  return nombres[genero] || `el vigía de ${base}`
+  return nombres[genero] || `el caballero de ${base}`
+}
+
+// El sujeto con el que narra la prosa, según el género.
+function sujeto(genero) {
+  const sujetos = {
+    epico: 'el caballero',
+    noir: 'el detective',
+    lovecraft: 'el testigo',
+    western: 'el forajido',
+    cyberpunk: 'el corredor',
+    tragedia: 'el héroe',
+  }
+  return sujetos[genero] || 'el caballero'
+}
+
+function minuscula(texto) {
+  return texto.charAt(0).toLowerCase() + texto.slice(1)
+}
+
+function mayuscula(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 // ---------------------------------------------------------------------------
@@ -360,12 +381,12 @@ export async function cronicaIAStream(beats, opciones = {}) {
         if (texto) {
           onTrozo?.({ indice: beat.indice, texto: '\n\n[la generación se interrumpió]' })
         } else {
-          texto = capituloProcedural(beat, k, premisa, capitulos)
+          texto = capituloProcedural(beat, numero, premisa, capitulos, genero)
           onTrozo?.({ indice: beat.indice, texto })
         }
       }
     } else {
-      texto = capituloProcedural(beat, k, premisa, capitulos)
+      texto = capituloProcedural(beat, numero, premisa, capitulos, genero)
       onTrozo?.({ indice: beat.indice, texto })
       await dormir(220)
     }
@@ -415,15 +436,15 @@ function construirPrompt({ symbol, genero, premisa, resumen, beat, numero, funci
   return lineas.join('\n')
 }
 
-function capituloProcedural(beat, k, premisa, capitulos) {
+function capituloProcedural(beat, numero, premisa, capitulos, genero) {
   const opciones = PLANTILLAS[beat.mood] || PLANTILLAS.calma
-  const proto = 'el vigía'
-  let texto = opciones[k % opciones.length].replaceAll('{proto}', proto)
-  if (k === 0 && premisa) texto = `Cuentan que todo empezó con una promesa: ${premisa}. ${texto}`
-  if (k > 0) {
-    const anterior = capitulos[capitulos.length - 1]
-    const eco = ECOS[anterior?.mood] || 'Más tarde,'
-    texto = `${eco} ${texto}`
+  const proto = sujeto(genero)
+  let texto = opciones[numero % opciones.length].replaceAll('{proto}', proto)
+  const anterior = capitulos[capitulos.length - 1]
+  if (numero === 0 && premisa) {
+    texto = `Cuentan que todo empezó con una promesa: ${premisa}. ${mayuscula(texto)}`
+  } else if (anterior) {
+    texto = `${ECOS[anterior.mood] || 'Más tarde,'} ${minuscula(texto)}`
   }
   return texto
 }
@@ -440,15 +461,15 @@ function limpiar(texto) {
 }
 
 const ECOS = {
-  mania: 'Después de la locura,',
-  euforia: 'Después de la fiesta,',
+  mania: 'Después de la manía,',
+  euforia: 'Después de la euforia,',
   ambicion: 'Después de la ambición,',
   calma: 'Después de la calma,',
   duda: 'Después de la duda,',
   temor: 'Después del temor,',
   panico: 'Después del pánico,',
   ruina: 'Después de la ruina,',
-  rechazo: 'Después del desdén,',
+  rechazo: 'Después del rechazo,',
   rescate: 'Después del rescate,',
 }
 

@@ -154,8 +154,8 @@ const POSICIONES = {
   entorno: { titulo: 'El Entorno', glosa: 'lo que rodea la situación' },
   consejo: { titulo: 'El Consejo', glosa: 'qué conviene hacer' },
   resultado: { titulo: 'El Resultado', glosa: 'el desenlace' },
-  respuesta: { titulo: 'La Respuesta', glosa: 'la respuesta' },
-  dia: { titulo: 'La Carta del Día', glosa: 'la carta de la jornada' },
+  respuesta: { titulo: 'La Respuesta', glosa: 'lo que concede o niega' },
+  dia: { titulo: 'La Carta del Día', glosa: 'lo que rige la jornada' },
 }
 
 function construirLectura(symbol, interval, candle, posicion, contexto) {
