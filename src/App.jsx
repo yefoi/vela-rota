@@ -363,7 +363,7 @@ export default function App() {
 
       <header className="cabecera">
         <div className="titulo-bloque">
-          <h1 className="titulo" data-texto="VELA ROTA">VELA ROTA</h1>
+          <h1 className="titulo" data-texto="WICKFABLE">WICKFABLE</h1>
           <p className="lema">
             los mercados como oráculo · cada vela es una carta tendida en el altar
           </p>
@@ -587,7 +587,7 @@ export default function App() {
       <VelasDeCera />
 
       <footer className="pie">
-        <span>VELA ROTA</span>
+        <span>WICKFABLE</span>
         <span>el precio no predice: revela</span>
         <span>obra de ficción · no es asesoría financiera · es liturgia</span>
       </footer>

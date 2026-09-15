@@ -311,7 +311,7 @@ export function resumenDeBeat(beat) {
 // ---------------------------------------------------------------------------
 
 const ESTILO_BASE =
-  'Eres el cronista de Vela Rota. Conviertes el movimiento del mercado en una historia de ficción. ' +
+  'Eres el cronista de Wickfable. Conviertes el movimiento del mercado en una historia de ficción. ' +
   'Escribes en español, con frases cortas y directas, sin adornos. No rompes el personaje y no explicas ' +
   'la metáfora del mercado. No menciones velas, gráficos, porcentajes ni dinero. ' +
   'Los personajes y objetos continúan de un acto al siguiente. ' +

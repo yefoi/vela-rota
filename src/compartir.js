@@ -41,7 +41,7 @@ export async function generarPergamino(lectura, meta = {}) {
   ctx.textAlign = 'center'
   ctx.fillStyle = COLOR.oro
   ctx.font = '700 46px Cinzel, Georgia, serif'
-  ctx.fillText('VELA ROTA', W / 2, 122)
+  ctx.fillText('WICKFABLE', W / 2, 122)
 
   ctx.fillStyle = COLOR.suave
   ctx.font = 'italic 20px "EB Garamond", Georgia, serif'
@@ -220,7 +220,7 @@ export async function generarPergaminoTirada(tirada, meta = {}) {
 export function nombreArchivo(lectura, meta = {}) {
   const par = `${meta.symbol || 'mercado'}-${meta.interval || ''}`.toLowerCase().replace(/[^a-z0-9-]/g, '')
   const carta = String(lectura?.carta?.nombre || 'carta').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return `vela-rota-${par}-${carta}.png`
+  return `wickfable-${par}-${carta}.png`
 }
 
 export function descargarPergamino(canvas, nombre) {
@@ -237,7 +237,7 @@ export async function compartirPergamino(canvas, nombre) {
       const archivo = new File([blob], nombre, { type: 'image/png' })
       if (navigator.canShare({ files: [archivo] })) {
         try {
-          await navigator.share({ files: [archivo], title: 'Vela Rota' })
+          await navigator.share({ files: [archivo], title: 'Wickfable' })
           return true
         } catch {
           /* el fiel canceló el compartir */

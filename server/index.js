@@ -158,5 +158,5 @@ if (fs.existsSync(dist)) {
 }
 
 app.listen(PUERTO, () => {
-  console.log(`[vela-rota] el oficio escucha en http://localhost:${PUERTO}`)
+  console.log(`[wickfable] el oficio escucha en http://localhost:${PUERTO}`)
 })

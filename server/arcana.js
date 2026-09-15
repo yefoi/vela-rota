@@ -1,4 +1,4 @@
-// Arcana — corpus litúrgico de Vela Rota.
+// Arcana — corpus litúrgico de Wickfable.
 // El mercado no predice: revela. Cada vela es una carta tendida en el altar.
 
 export const ARCANOS_MAYORES = [

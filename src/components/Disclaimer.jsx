@@ -25,10 +25,10 @@ export default function Disclaimer() {
       {!aceptado ? (
         <div className="aviso-fondo" role="dialog" aria-modal="true" aria-label="Aviso legal">
           <div className="aviso-caja">
-            <h2 className="titulo aviso-titulo" data-texto="VELA ROTA">VELA ROTA</h2>
+            <h2 className="titulo aviso-titulo" data-texto="WICKFABLE">WICKFABLE</h2>
             <p className="aviso-lead">Antes de encender la vela, un aviso que no es letra pequeña.</p>
             <p>
-              VELA ROTA es una obra de <strong>ficción</strong>. Toma precios reales de mercado y los
+              WICKFABLE es una obra de <strong>ficción</strong>. Toma precios reales de mercado y los
               convierte en cartas de tarot y crónicas inventadas por una máquina.
             </p>
             <p>

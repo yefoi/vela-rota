@@ -1,4 +1,4 @@
-# AGENTS.md — Vela Rota
+# AGENTS.md — Wickfable
 
 Mercados como oráculo: velas reales leídas como cartas de tarot y crónicas de ficción.
 Node + Express (`server/`) y cliente Vite + React (`src/`). Deploy serverless en Vercel (`api/`).

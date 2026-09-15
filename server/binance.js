@@ -65,7 +65,7 @@ async function desdeCoinbase(symbol, interval, limit) {
   const factor = COINBASE_FACTOR[interval] || 1
   const url = `https://api.exchange.coinbase.com/products/${par}/candles?granularity=${gran}`
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'vela-rota/0.1' },
+    headers: { 'User-Agent': 'wickfable/0.1' },
     signal: AbortSignal.timeout(4000),
   })
   if (!res.ok) throw new Error(`Coinbase HTTP ${res.status}`)

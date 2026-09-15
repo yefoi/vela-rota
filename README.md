@@ -1,4 +1,4 @@
-# VELA ROTA
+# WICKFABLE
 
 > mercados como oráculo · cada vela es una carta tendida en el altar
 
@@ -106,7 +106,7 @@ El repo ya trae el adaptador serverless: `api/*.js` reutiliza la lógica de
 
 ## Aviso
 
-VELA ROTA es una obra de ficción. Genera cartas y crónicas inventadas a partir
+WICKFABLE es una obra de ficción. Genera cartas y crónicas inventadas a partir
 de precios reales de mercado. No es asesoría financiera, ni análisis de
 inversión, ni una recomendación de compra, venta o tenencia de ningún activo.
 No tomes decisiones de inversión basándote en nada de lo que aparece aquí.
