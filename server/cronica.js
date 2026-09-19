@@ -51,16 +51,16 @@ export const GENEROS = {
 }
 
 const MOODS = {
-  mania: { titulo: 'La Manía', tono: 'euforia', glosa: 'la subida se desborda' },
-  euforia: { titulo: 'La Euforia', tono: 'alegría', glosa: 'una subida clara' },
-  ambicion: { titulo: 'La Ambición', tono: 'codicia', glosa: 'una subida moderada' },
-  calma: { titulo: 'La Calma', tono: 'sosiego', glosa: 'apenas hay movimiento' },
-  duda: { titulo: 'La Duda', tono: 'incertidumbre', glosa: 'movimiento lateral, sin dirección' },
-  temor: { titulo: 'El Temor', tono: 'sombra', glosa: 'una bajada moderada' },
-  panico: { titulo: 'El Pánico', tono: 'horror', glosa: 'una bajada fuerte' },
-  ruina: { titulo: 'La Ruina', tono: 'tragedia', glosa: 'un desplome' },
-  rechazo: { titulo: 'El Rechazo', tono: 'desdén', glosa: 'un rechazo en la parte alta' },
-  rescate: { titulo: 'El Rescate', tono: 'esperanza', glosa: 'un rebote desde la parte baja' },
+  mania: { titulo: 'La Manía', alt: 'El Exceso', tono: 'euforia', glosa: 'la subida se desborda' },
+  euforia: { titulo: 'La Euforia', alt: 'El Buen Momento', tono: 'alegría', glosa: 'una subida clara' },
+  ambicion: { titulo: 'La Ambición', alt: 'El Ansia', tono: 'codicia', glosa: 'una subida moderada' },
+  calma: { titulo: 'La Calma', alt: 'Sin Novedad', tono: 'sosiego', glosa: 'apenas hay movimiento' },
+  duda: { titulo: 'La Duda', alt: 'La Indecisión', tono: 'incertidumbre', glosa: 'movimiento lateral, sin dirección' },
+  temor: { titulo: 'El Temor', alt: 'El Miedo', tono: 'sombra', glosa: 'una bajada moderada' },
+  panico: { titulo: 'El Pánico', alt: 'La Estampida', tono: 'horror', glosa: 'una bajada fuerte' },
+  ruina: { titulo: 'La Ruina', alt: 'El Derrumbe', tono: 'tragedia', glosa: 'un desplome' },
+  rechazo: { titulo: 'El Rechazo', alt: 'El Muro', tono: 'desdén', glosa: 'un rechazo en la parte alta' },
+  rescate: { titulo: 'El Rescate', alt: 'El Alivio', tono: 'esperanza', glosa: 'un rebote desde la parte baja' },
 }
 
 export function listarGeneros() {
@@ -78,6 +78,17 @@ export function analizarBeats(symbol, interval, candles, cap = 5, genero = 'epic
   const cambios = candles.map((c) => (c.close - c.open) / c.open)
   const media = cambios.reduce((a, b) => a + Math.abs(b), 0) / cambios.length
   const base = Math.max(media, 1e-6)
+  const ordenados = [...cambios].sort((a, b) => a - b)
+  const percentil = (x) => {
+    let lo = 0
+    let hi = ordenados.length
+    while (lo < hi) {
+      const m = (lo + hi) >> 1
+      if (ordenados[m] < x) lo = m + 1
+      else hi = m
+    }
+    return lo / ordenados.length
+  }
   const indices = seleccionarIndices(candles, cap, base)
 
   let posFuerte = -1
@@ -96,17 +107,19 @@ export function analizarBeats(symbol, interval, candles, cap = 5, genero = 'epic
     }
   })
 
+  const moods = indices.map((indice) => clasificar(candles[indice], percentil(cambios[indice])))
   let estado = estadoInicial()
   const beats = indices.map((indice, k) => {
     const c = candles[indice]
     const cambio = cambios[indice]
-    const mood = clasificar(c, cambio / base)
+    const mood = moods[k]
+    const repetido = k > 0 && moods[k - 1] === mood
     estado = evolucionarEstado(estado, mood, gen, indice)
     return {
       indice,
       acto: `Acto ${ROMANOS[k] || k + 1}`,
       mood,
-      titulo: MOODS[mood].titulo,
+      titulo: repetido ? MOODS[mood].alt : MOODS[mood].titulo,
       tono: MOODS[mood].tono,
       glosa: MOODS[mood].glosa,
       funcion: funcionNarrativa(k, indices.length, mood, posFuerte, negFuerte),
@@ -135,8 +148,23 @@ function seleccionarIndices(candles, cap, base) {
     const borde = i === 0 || i === n - 1 ? 2 : 0
     return z + rango * 2 + pivote + borde
   })
-  const elegidos = new Set([0, n - 1])
   const orden = candles.map((_, i) => i).sort((a, b) => puntaje[b] - puntaje[a])
+  const separacion = Math.max(1, Math.floor(n / (cap * 2)))
+  const elegidos = new Set([0, n - 1])
+
+  // Primero los giros, con una separación mínima para que los actos no se apiñen.
+  for (const i of orden) {
+    if (elegidos.size >= cap) break
+    let cerca = false
+    for (const e of elegidos) {
+      if (Math.abs(e - i) < separacion) {
+        cerca = true
+        break
+      }
+    }
+    if (!cerca) elegidos.add(i)
+  }
+  // Si la separación dejó huecos, completar.
   for (const i of orden) {
     if (elegidos.size >= cap) break
     elegidos.add(i)
@@ -152,16 +180,16 @@ function esPivote(candles, i) {
   return (v.high >= izq.high && v.high >= der.high) || (v.low <= izq.low && v.low <= der.low)
 }
 
-function clasificar(c, z) {
+function clasificar(c, p) {
   const rango = Math.max(c.high - c.low, 1e-12)
   const mechaSup = (c.high - Math.max(c.open, c.close)) / rango
   const mechaInf = (Math.min(c.open, c.close) - c.low) / rango
-  if (z > 3) return 'mania'
-  if (z > 1.8) return 'euforia'
-  if (z > 0.8) return 'ambicion'
-  if (z < -3) return 'ruina'
-  if (z < -1.8) return 'panico'
-  if (z < -0.8) return 'temor'
+  if (p >= 0.92) return 'mania'
+  if (p >= 0.79) return 'euforia'
+  if (p >= 0.62) return 'ambicion'
+  if (p <= 0.08) return 'ruina'
+  if (p <= 0.21) return 'panico'
+  if (p <= 0.38) return 'temor'
   if (mechaSup > 0.55) return 'rechazo'
   if (mechaInf > 0.55) return 'rescate'
   return 'calma'
@@ -439,12 +467,19 @@ function construirPrompt({ symbol, genero, premisa, resumen, beat, numero, funci
 function capituloProcedural(beat, numero, premisa, capitulos, genero) {
   const opciones = PLANTILLAS[beat.mood] || PLANTILLAS.calma
   const proto = sujeto(genero)
-  let texto = opciones[numero % opciones.length].replaceAll('{proto}', proto)
+  // Rota las variantes según cuántas veces ya salió este ánimo, no por el índice global.
+  const usados = capitulos.filter((c) => c.mood === beat.mood).length
+  let cuerpo = opciones[usados % opciones.length].replaceAll('{proto}', proto)
   const anterior = capitulos[capitulos.length - 1]
+  // Si el cuerpo se repite con el acto previo, usa la siguiente variante.
+  if (anterior && opciones.length > 1 && anterior.texto.toLowerCase().endsWith(cuerpo.toLowerCase())) {
+    cuerpo = opciones[(usados + 1) % opciones.length].replaceAll('{proto}', proto)
+  }
+  let texto = cuerpo
   if (numero === 0 && premisa) {
-    texto = `Cuentan que todo empezó con una promesa: ${premisa}. ${mayuscula(texto)}`
+    texto = `Cuentan que todo empezó con una promesa: ${premisa}. ${mayuscula(cuerpo)}`
   } else if (anterior) {
-    texto = `${ECOS[anterior.mood] || 'Más tarde,'} ${minuscula(texto)}`
+    texto = `${ECOS[anterior.mood] || 'Más tarde,'} ${minuscula(cuerpo)}`
   }
   return texto
 }
@@ -477,42 +512,52 @@ const PLANTILLAS = {
   mania: [
     'Todo subió sin control y {proto} creyó que no podía fallar. Los demás hicieron lo mismo, y nadie se detuvo a pensar.',
     '{proto} celebró antes de tiempo y gastó lo que no tenía. La euforia se contagió a todos los presentes.',
+    'Los precios se dispararon y {proto} se dejó llevar. Compró en el peor momento sin darse cuenta.',
   ],
   euforia: [
     'Las cosas iban bien y {proto} se sintió aliviado. Los demás también lo notaron y se acercaron a él.',
     '{proto} pasó un buen rato y se permitió confiar. Todo parecía, por una vez, en su sitio.',
+    'La jornada fue buena y {proto} bajó la guardia. Nada hacía presagiar lo contrario.',
   ],
   ambicion: [
     '{proto} quiso más de lo que tenía. Aunque no hacía falta, dio un paso más.',
     '{proto} no se conformó con lo ganado y decidió seguir. No midió bien el coste de hacerlo.',
+    'El resultado no bastó a {proto}, que ya pensaba en el siguiente movimiento.',
   ],
   calma: [
     'No pasó nada, y {proto} aprovechó para descansar. El día fue tranquilo y sin sobresaltos.',
     '{proto} se quedó quieto y esperó. A veces no hacer nada es lo correcto.',
+    'Todo siguió igual y {proto} no tuvo que decidir nada. Fue un alivio.',
   ],
   duda: [
     '{proto} no supo qué hacer y se quedó mirando. Las opciones eran varias y ninguna le convencía.',
     '{proto} cambió de opinión dos veces y al final no hizo nada.',
+    'Las señales se contradecían y {proto} prefirió no moverse hasta estar seguro.',
   ],
   temor: [
     '{proto} vio que algo iba mal y se puso a la defensiva. Guardó lo que pudo y se preparó.',
     'El ambiente se tensó y {proto} empezó a preocuparse. Prefirió no arriesgar.',
+    '{proto} notó que las cosas se torcían y redujo sus planes por si acaso.',
   ],
   panico: [
     'De pronto todos quisieron salir a la vez. {proto} perdió en la confusión parte de lo que tenía.',
     'La situación empeoró deprisa y {proto} actuó sin pensar. Luego lo lamentó.',
+    'El miedo se extendió y {proto} vendió a cualquier precio con tal de salir.',
   ],
   ruina: [
     'Todo lo que {proto} había construido se vino abajo. Perdió la mayor parte y no pudo evitarlo.',
     '{proto} lo perdió casi todo de golpe. Le costó aceptar que no había vuelta atrás.',
+    'La caída fue tan grande que {proto} se quedó sin nada con lo que empezar de nuevo.',
   ],
   rechazo: [
     '{proto} intentó seguir subiendo y se topó con un muro. No pudo avanzar más.',
     'La parte alta no dejó pasar a {proto}. Dio media vuelta sin conseguir lo que buscaba.',
+    'Cada intento de {proto} por subir acabó en lo mismo: la puerta cerrada.',
   ],
   rescate: [
     'Cuando parecía que {proto} se hundía, algo lo sostuvo. Salió del apuro, aunque no intacto.',
     '{proto} encontró ayuda cuando más la necesitaba. La situación dio un respiro.',
+    'El suelo aguantó y {proto} pudo recuperarse. No fue mucho, pero bastó para seguir.',
   ],
 }
 
